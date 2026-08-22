@@ -64,6 +64,7 @@ const authSlice = createSlice({
       // refresh (silent)
       .addCase(refreshSession.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
+        state.user = action.payload.userDetails;
       })
       .addCase(refreshSession.rejected, (state, action) => {
         state.user = null;
@@ -75,6 +76,7 @@ const authSlice = createSlice({
       // Without these two cases, sessionChecked can never become true.
       .addCase(restoreSession.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
+        state.user = action.payload.userDetails;
         state.sessionChecked = true;
       })
       .addCase(restoreSession.rejected, (state) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard,
@@ -22,18 +22,19 @@ import {
 } from 'lucide-react'
 import ShowModel from '../model/ShowModel';
 import UserLogout from '../components/UserLogout';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/action/auth.action';
 
 const CricDashboard = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [modelOpen, setModalOpen] = useState(false);
+    const { user } = useAppSelector(state => state.auth)
     const [activeIndex, setActiveIndex] = useState(0);
     const navigate = useNavigate();
     const dispatch = useAppDispatch()
 
-
+    // console.log(user)
     const sidebarItems = [
         {
             label: "Dashboard",
@@ -110,8 +111,30 @@ const CricDashboard = () => {
         navigate(to);
     }
 
-    
-    const handleLogout = () =>{
+    const userDisplay = useMemo(() => {
+        const details = {
+            fullName: "Default Name",
+            role: "Default Role",
+            initials: "NA",
+        };
+
+        const name = user.name;
+        const words = name.trim().split(/\s+/);
+
+        details.fullName = words
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(" ");
+
+        details.initials = words
+            .map((item) => item.charAt(0).toUpperCase())
+            // .slice(0, 2)
+            .join("");
+
+        details.role = user.role.trim().slice(0, 1).toUpperCase() + user.role.slice(1);
+
+        return details;
+    }, [user]);
+    const handleLogout = () => {
         dispatch(logoutUser());
         console.log("Clicked")
     }
@@ -172,21 +195,19 @@ const CricDashboard = () => {
                         </button>
                     </div>
 
-                    <div className="cursor-pointer border-t border-[#E5E1D8] p-3 flex items-center gap-2" onClick={e =>{
+                    <div className="cursor-pointer border-t border-[#E5E1D8] p-3 flex items-center gap-2" onClick={e => {
                         e.stopPropagation();
                         setModalOpen(true);
                     }}>
-                        <div className="bg-[#0B2818]/10 w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[#0B2818] text-xs font-semibold">NA</div>
+                        <div className="bg-[#0B2818]/10 w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[#0B2818] text-xs font-semibold">{userDisplay.initials}</div>
                         <div className={`flex flex-col text-sm min-w-0 ${collapsed ? "md:hidden" : ""}`}>
-                            <span className="text-[#1F2933] truncate">Naeem Akhter</span>
-                            <span className="text-xs text-[#6B7280] truncate">Role</span>
+                            <span className="text-[#1F2933] truncate">{userDisplay.fullName}</span>
+                            <span className="text-xs text-[#6B7280] truncate">{userDisplay.role}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* MAIN */}
                 <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
-                    {/* TOP BAR */}
                     <div className="sticky top-0 z-20 bg-white p-[8px] flex items-center justify-between gap-2 sm:gap-3 shrink-0">
                         <button onClick={handleMenuClick} className="flex items-center justify-center border border-[#E5E1D8] hover:bg-[#F5F1E6] w-9 h-9 shrink-0 rounded-lg px-3 py-1 text-sm text-[#1F2933] transition-colors">
                             <Menu size={18} />
@@ -209,7 +230,7 @@ const CricDashboard = () => {
                             </button>
                             <div className="hidden sm:block border-l border-[#E5E1D8] h-6 mx-1"></div>
                             <button className="flex items-center gap-2 hover:bg-[#F5F1E6] rounded-lg pl-1 pr-0 sm:pr-2 py-1 transition-colors">
-                                <div className="bg-[#0B2818] w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[#F2B84B] text-xs font-semibold">NA</div>
+                                <div className="bg-[#0B2818] w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[#F2B84B] text-xs font-semibold">{userDisplay.initials}</div>
                                 <ChevronDown size={16} className="hidden sm:block text-[#1F2933]" />
                             </button>
                         </div>
@@ -220,9 +241,9 @@ const CricDashboard = () => {
                 </div>
             </div>
 
-            
+
             <ShowModel open={modelOpen} onClose={() => setModalOpen(false)} title="Confirm logout">
-                < UserLogout onCancel={() => setModalOpen(false)} onLogout ={handleLogout}/>
+                < UserLogout onCancel={() => setModalOpen(false)} onLogout={handleLogout} />
             </ShowModel>
         </>
     )
