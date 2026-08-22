@@ -6,8 +6,6 @@ import StatsBar from "../components/StatsBar";
 import WhyJoin from "../components/WhyJoin";
 import CTABanner from "../components/CTABanner";
 import Testimonials from "../components/Testimonials";
-import Footer from "../components/Footer";
-import Model from '../components/Model';
 
 const Landing = () => {
     return (
