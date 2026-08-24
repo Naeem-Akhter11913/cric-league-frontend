@@ -4,7 +4,7 @@ import axiosInstance from '../../api/axiosInstance';
 // Kept separate from the slice so they're easy to unit test / reuse.
 
 export const registerRequest = (payload) =>
-  axiosInstance.post('/auth/register', payload).then((res) => res.data.data);
+  axiosInstance.post('/auth/register', payload).then((res) => res.data);
 // payload: { name, email, password, phone?, role }
 
 export const loginRequest = (payload) =>

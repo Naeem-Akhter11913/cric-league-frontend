@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard,
@@ -24,6 +24,7 @@ import ShowModel from '../model/ShowModel';
 import UserLogout from '../components/UserLogout';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/action/auth.action';
+import { getMyProfile } from '../store/action/player.action';
 
 const CricDashboard = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -32,7 +33,9 @@ const CricDashboard = () => {
     const { user } = useAppSelector(state => state.auth)
     const [activeIndex, setActiveIndex] = useState(0);
     const navigate = useNavigate();
-    const dispatch = useAppDispatch()
+    const dispatch = useAppDispatch();
+    const calledRef = useRef(false);
+
 
     // console.log(user)
     const sidebarItems = [
@@ -134,10 +137,17 @@ const CricDashboard = () => {
 
         return details;
     }, [user]);
+
     const handleLogout = () => {
         dispatch(logoutUser());
         console.log("Clicked")
     }
+
+    useEffect(() => {
+        if (calledRef.current) return;
+        calledRef.current = true;
+        dispatch(getMyProfile({user}));
+    }, [user]);
 
     return (
         <>

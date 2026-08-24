@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import './App.css'
 import { Route, Routes } from 'react-router-dom'
 import { useAppDispatch } from './store/hooks'
@@ -31,10 +31,12 @@ const OrgVenues = lazy(() => import('./pages/OrgVenues'));
 
 function App() {
   const dispatch = useAppDispatch();
-
+  const calledRef = useRef(false);
   useEffect(() => {
+    if (calledRef.current) return;
+    calledRef.current = true;
     dispatch(restoreSession());
-  }, [dispatch]);
+  }, []);
 
   return (
     <Suspense fallback={
@@ -45,13 +47,13 @@ function App() {
       <Routes>
 
         {/* <Route element={<GuestRoute />}> */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/tournaments" element={<Tournaments />} />
-          <Route path="/teams" element={<TeamsPage />} />
-          <Route path="/players" element={<Players />} />
-          <Route path="/liveScores" element={<LiveScores />} />
-          <Route path="/rankings" element={<Rankings />} />
-          <Route path="/blog" element={<Blog />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/tournaments" element={<Tournaments />} />
+        <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/players" element={<Players />} />
+        <Route path="/liveScores" element={<LiveScores />} />
+        <Route path="/rankings" element={<Rankings />} />
+        <Route path="/blog" element={<Blog />} />
         {/* </Route> */}
 
         <Route element={<ProtectedRoute />}>

@@ -12,6 +12,7 @@ const initialState = {
   accessToken: null,
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
+  success: null,
   sessionChecked: false,
 };
 
@@ -27,6 +28,11 @@ const authSlice = createSlice({
     },
     clearAuthError: (state) => {
       state.error = null;
+      state.status = 'idle';
+    },
+    clearAuthSuccess: (state) => {
+      state.success = null;
+      state.status = 'idle';
     },
   },
   extraReducers: (builder) => {
@@ -38,8 +44,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.user = action.payload.user;
-        // state.accessToken = action.payload.accessToken;
+        state.success = action.payload.message
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = 'failed';

@@ -186,9 +186,16 @@
 
 // export default Register;
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { registerUser } from '../store/action/auth.action';
+import toast from 'react-hot-toast';
+import { clearAuthError } from '../store/Slice/authSlice';
 
-const Register = ({setModalPage}) => {
+const Register = ({ setModalPage }) => {
+    const dispatch = useAppDispatch();
+
+    const { status, error, success } = useAppSelector(state => state.auth);
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -206,9 +213,39 @@ const Register = ({setModalPage}) => {
             alert("Passwords do not match");
             return;
         }
-        // TODO: wire up to your auth API
-        console.log(form);
+        // console.log(form);
+        dispatch(registerUser(form)).unwrap();
     };
+    // 'idle' | 'loading' | 'succeeded' | 'failed'
+    useEffect(() => {
+        let timerId;
+        // console.log({status, error, success})
+        if (status === "failed" && error) {
+            toast.error(error);
+            dispatch(clearAuthError());
+            return;
+        }
+        if (status === "succeeded" && success) {
+            toast.success(success)
+            dispatch(clearAuthError());
+            setForm({
+                name: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                agree: false,
+            });
+            timerId = setTimeout(() => {
+                setModalPage("login");
+            }, 500);
+            return;
+        }
+
+        return () => {
+            if (timerId) clearTimeout(timerId);
+        };
+
+    }, [status, error, success]);
     return (
         <div className="h-full w-full max-h-[700px] bg-[#0a0a12] flex p-0 rounded-2xl overflow-hidden">
             {/* Left: branded panel */}
@@ -340,9 +377,10 @@ const Register = ({setModalPage}) => {
 
                         <button
                             type="submit"
+                            disabled={status === 'loading'}
                             className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold py-2.5 transition shadow-lg shadow-violet-900/30"
                         >
-                            Create account
+                            {status === 'loading' ? 'Loading...' : 'Create account'}
                         </button>
                     </form>
 
@@ -364,7 +402,7 @@ const Register = ({setModalPage}) => {
 
                     <p className="text-center text-sm text-gray-400 mt-6">
                         Already have an account?{" "}
-                        <span onClick={() => {setModalPage("login")}} className="text-violet-400 font-semibold hover:text-violet-300 cursor-pointer">
+                        <span onClick={() => { setModalPage("login") }} className="text-violet-400 font-semibold hover:text-violet-300 cursor-pointer">
                             Log in
                         </span>
                     </p>

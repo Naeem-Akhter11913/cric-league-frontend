@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Settings as SettingsIcon,
   UserCircle2,
@@ -10,8 +10,6 @@ import {
   Blocks,
   ArrowRightLeft,
   Info,
-  Save,
-  Upload,
   ChevronRight,
   ArrowRight,
   Flame,
@@ -22,9 +20,18 @@ import {
   Clock,
   Database,
   HardDrive,
-  ChevronDown,
 } from "lucide-react";
 import DashboardFooter from "../components/DashboardFooter";
+import GeneralSettings from "../components/GeneralSettings";
+import Profile from "../components/Profile";
+import Security from "../components/Security";
+import Notifications from "../components/Notifications";
+import UsersRoles from "../components/UsersRoles";
+import TournamentSettings from "../components/TournamentSettings";
+import Integrations from "../components/Integrations";
+import BackupRestore from "../components/BackupRestore";
+import About from "../components/About";
+import { useAppSelector } from "../store/hooks";
 
 /* ------------------------------------------------------------------ */
 /* Static data — swap these out for API data as needed                */
@@ -37,7 +44,7 @@ const MENU_ITEMS = [
   { icon: Bell, label: "Notifications", desc: "Notification preferences" },
   { icon: Users, label: "Users & Roles", desc: "Manage users and roles" },
   { icon: Trophy, label: "Tournament Settings", desc: "Default tournament settings" },
-  { icon: Target, label: "Scoring Settings", desc: "Scoring and match preferences" },
+  // { icon: Target, label: "Scoring Settings", desc: "Scoring and match preferences" },
   { icon: Blocks, label: "Integrations", desc: "Third-party integrations" },
   { icon: ArrowRightLeft, label: "Backup & Restore", desc: "Backup and restore data" },
   { icon: Info, label: "About", desc: "App information and updates" },
@@ -58,61 +65,60 @@ const SYSTEM_INFO = [
   { icon: Database, label: "Database Status", value: "Connected", badge: true },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Small helpers                                                      */
-/* ------------------------------------------------------------------ */
-
-function FieldLabel({ title, subtitle }) {
-  return (
-    <div className="mb-2">
-      <p className="text-sm font-semibold text-slate-800">{title}</p>
-      {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
-    </div>
-  );
-}
-
-function Select({ value, options = [] }) {
-  return (
-    <div className="relative">
-      <select
-        defaultValue={value}
-        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-sm text-slate-700 shadow-sm outline-none focus:border-indigo-300"
-      >
-        <option>{value}</option>
-        {options.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-      <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-    </div>
-  );
-}
-
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-indigo-600" : "bg-slate-200"
-        }`}
-    >
-      <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"
-          }`}
-      />
-    </button>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Main component                                                     */
-/* ------------------------------------------------------------------ */
+const INITIAL_STATE = {
+  personalInfo: { dob: "", gender: "", city: "", country: "" },
+  playingDetails: {
+    battingStyle: "",
+    bowlingStyle: "",
+    playerType: "batter",
+    isWicketKeeper: false,
+  },
+  additionalInfo: {
+    isIndependent: true,
+    forPlayer: "",
+    status: "Available",
+  },
+};
 
 export default function OrgSettings() {
-  const [maintenance, setMaintenance] = useState(false);
+  const { profile, list, selectedPlayer, loading, error, success } = useAppSelector(state => state.userInfo);
+  const [form, setForm] = useState(INITIAL_STATE);
+
+
+  // useEffect(() =>{
+  //   console.log({profile, list, selectedPlayer, loading, error, success})
+  // },[profile, list, selectedPlayer, loading, error, success])
+
+  const createProfile = () => {
+
+  }
+
+  const updateProfile = () => {
+
+  }
+
+  const handleSubmit = (dataTobeSave) => {
+    console.log(dataTobeSave)
+  }
+
+  const settingsMap = {
+    General: <GeneralSettings />,
+    Profile: <Profile form={form} setForm={setForm} handleSubmit={handleSubmit} />,
+    Security: <Security />,
+    Notifications: <Notifications />,
+    "Users & Roles": <UsersRoles />,
+    "Tournament Settings": <TournamentSettings />,
+    Integrations: <Integrations />,
+    "Backup & Restore": <BackupRestore />,
+    // "Scoring Settings": <p>Scoring Settings</p>,
+    About: <About />
+  }
+
+  const [activeTab, setActiveTab] = useState(Object.keys(settingsMap)[0]);
+  // console.log(activeTab);
 
   return (
     <div className="h-screen bg-[#F7F7F9] overflow-y-auto no-scrollbar p-6 lg:p-8">
-      {/* Page header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -120,23 +126,27 @@ export default function OrgSettings() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[260px_1fr_300px]">
-        {/* Settings menu */}
+      {/* <div className="grid grid-cols-1 gap-6 xl:grid-cols-[260px_1fr_300px]">
         <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <h3 className="mb-3 px-1 text-[15px] font-semibold text-slate-800">Settings Menu</h3> */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[260px_1fr_300px] items-start">
+        <div className="sticky top-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <h3 className="mb-3 px-1 text-[15px] font-semibold text-slate-800">Settings Menu</h3>
           <div className="flex flex-col gap-1">
             {MENU_ITEMS.map((item) => (
               <button
+                onClick={() => setActiveTab(item.label)}
                 key={item.label}
-                className={`flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${item.active ? "bg-indigo-50" : "hover:bg-slate-50"
+                className={`flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${activeTab === item.label ? "bg-indigo-50" : "hover:bg-slate-50"
+                  // className={`flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${item.active ? "bg-indigo-50" : "hover:bg-slate-50"
                   }`}
               >
                 <item.icon
                   size={17}
-                  className={`mt-0.5 shrink-0 ${item.active ? "text-indigo-600" : "text-slate-400"}`}
+                  className={`mt-0.5 shrink-0 ${activeTab === item.label ? "text-indigo-600" : "text-slate-400"}`}
                 />
                 <div>
-                  <p className={`text-sm font-semibold ${item.active ? "text-indigo-600" : "text-slate-800"}`}>
+                  <p className={`text-sm font-semibold ${activeTab === item.label ? "text-indigo-600" : "text-slate-800"}`}>
                     {item.label}
                   </p>
                   <p className="text-xs text-slate-400">{item.desc}</p>
@@ -146,90 +156,11 @@ export default function OrgSettings() {
           </div>
         </div>
 
-        {/* General settings form */}
-        <div className="min-w-0 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">General Settings</h3>
-              <p className="text-sm text-slate-400">Configure basic application settings</p>
-            </div>
-            <button className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm hover:bg-indigo-50">
-              <Save size={15} />
-              Save Changes
-            </button>
-          </div>
+        {/* <GeneralSettings /> */}
+        {settingsMap[activeTab]}
 
-          {/* Application name */}
-          <div className="border-b border-slate-100 pb-6">
-            <FieldLabel title="Application Name" subtitle="This name will be shown across the application" />
-            <input
-              defaultValue="Cric League"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm outline-none focus:border-indigo-300"
-            />
-          </div>
-
-          {/* Application logo */}
-          <div className="border-b border-slate-100 py-6">
-            <FieldLabel title="Application Logo" subtitle="Upload your tournament or organization logo" />
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-2xl">
-                🏏
-              </div>
-              <div>
-                <button className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50">
-                  <Upload size={15} />
-                  Change Logo
-                </button>
-                <p className="mt-1.5 text-xs text-slate-400">PNG, JPG or SVG (Max. 2MB)</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Timezone / Date format */}
-          <div className="grid grid-cols-1 gap-6 border-b border-slate-100 py-6 sm:grid-cols-2">
-            <div>
-              <FieldLabel title="Default Timezone" subtitle="Set the default timezone for the application" />
-              <Select value="(UTC+05:30) Asia/Kolkata" options={["(UTC+00:00) London", "(UTC-05:00) New York"]} />
-            </div>
-            <div>
-              <FieldLabel title="Date Format" subtitle="Select the date format" />
-              <Select value="DD MMM YYYY (25 May 2026)" options={["MM/DD/YYYY", "YYYY-MM-DD"]} />
-            </div>
-          </div>
-
-          {/* Time format / Currency */}
-          <div className="grid grid-cols-1 gap-6 border-b border-slate-100 py-6 sm:grid-cols-2">
-            <div>
-              <FieldLabel title="Time Format" subtitle="Select the time format" />
-              <Select value="12 Hour (01:30 PM)" options={["24 Hour (13:30)"]} />
-            </div>
-            <div>
-              <FieldLabel title="Currency" subtitle="Select default currency" />
-              <Select value="INR (₹) - Indian Rupee" options={["USD ($) - US Dollar", "EUR (€) - Euro"]} />
-            </div>
-          </div>
-
-          {/* Language */}
-          <div className="border-b border-slate-100 py-6 sm:w-1/2 sm:pr-3">
-            <FieldLabel title="Language" subtitle="Select application language" />
-            <Select value="English" options={["Hindi", "Spanish"]} />
-          </div>
-
-          {/* Maintenance mode */}
-          <div className="flex items-center justify-between pt-6">
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Maintenance Mode</p>
-              <p className="text-xs text-slate-400">
-                Enable maintenance mode to restrict access to the application
-              </p>
-            </div>
-            <Toggle checked={maintenance} onChange={() => setMaintenance((v) => !v)} />
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className="flex flex-col gap-6">
-          {/* Profile summary */}
+        <div className="sticky top-1 flex flex-col gap-6">
+          {/* <div className="flex flex-col gap-6"> */}
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-[15px] font-semibold text-slate-800">Profile Summary</h3>
             <div className="flex items-center gap-3">
@@ -247,7 +178,6 @@ export default function OrgSettings() {
             </button>
           </div>
 
-          {/* Quick actions */}
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <h3 className="mb-3 text-[15px] font-semibold text-slate-800">Quick Actions</h3>
             <div className="flex flex-col">
@@ -269,7 +199,6 @@ export default function OrgSettings() {
             </div>
           </div>
 
-          {/* System information */}
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-[15px] font-semibold text-slate-800">System Information</h3>
             <div className="flex flex-col gap-3.5">

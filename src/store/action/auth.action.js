@@ -10,12 +10,10 @@ import { setAccessToken, clearAccessToken } from '../../api/axiosInstance';
 // httpOnly cookie that the browser sends automatically on every request.
 
 export const registerUser = createAsyncThunk(
-  'auth/registerUser',
+  'auth/register',
   async (payload, { rejectWithValue }) => {
-    console.log(payload);
     try {
       const data = await authAPI.registerRequest(payload);
-      // setAccessToken(data.accessToken);
       return data; // { user, accessToken }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Registration failed');
