@@ -39,7 +39,7 @@
 // );
 
 
-// export const playerList = createAsyncThunk(
+// export const orgList = createAsyncThunk(
 //     'player/param',
 //     async (payload, { rejectWithValue }) => {
 //         try {
@@ -114,7 +114,7 @@ export const updateMyProfile = createAsyncThunk(
 );
 
 // Get Player List
-export const playerList = createAsyncThunk(
+export const orgList = createAsyncThunk(
   'player/list',
   async (payload, { rejectWithValue }) => {
     try {

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { createProfile, getMyProfile, playerGetById, playerList, updateMyProfile } from '../action/player.action';
+import { createProfile, getMyProfile, playerGetById, orgList, updateMyProfile } from '../action/player.action';
 
 
 const initialState = {
@@ -18,6 +18,9 @@ const playerSlice = createSlice({
         clearPlayerError: (state) => {
             state.error = null;
         },
+        clearPlayerSuccess: (state) => {
+            state.success = null
+        },
         clearSelectedPlayer: (state) => {
             state.selectedPlayer = null;
         },
@@ -31,7 +34,8 @@ const playerSlice = createSlice({
             })
             .addCase(createProfile.fulfilled, (state, action) => {
                 state.loading = false;
-                state.profile = action.payload;
+                state.success = action.payload.message;
+                state.profile = action.payload.data;
             })
             .addCase(createProfile.rejected, (state, action) => {
                 state.loading = false;
@@ -45,7 +49,7 @@ const playerSlice = createSlice({
             })
             .addCase(getMyProfile.fulfilled, (state, action) => {
                 state.loading = false;
-                state.profile = action.payload;
+                state.profile = action.payload.data;
             })
             .addCase(getMyProfile.rejected, (state, action) => {
                 state.loading = false;
@@ -59,7 +63,8 @@ const playerSlice = createSlice({
             })
             .addCase(updateMyProfile.fulfilled, (state, action) => {
                 state.loading = false;
-                state.profile = action.payload;
+                state.profile = action.payload.data;
+                state.success = action.payload.message;
             })
             .addCase(updateMyProfile.rejected, (state, action) => {
                 state.loading = false;
@@ -67,17 +72,17 @@ const playerSlice = createSlice({
             })
 
             // Player List
-            .addCase(playerList.pending, (state) => {
+            .addCase(orgList.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(playerList.fulfilled, (state, action) => {
+            .addCase(orgList.fulfilled, (state, action) => {
                 state.loading = false;
-                state.list = action.payload;
+                state.list = action.payload.data;
             })
-            .addCase(playerList.rejected, (state, action) => {
+            .addCase(orgList.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                // state.error = action.payload;
             })
 
             // Get Player By Id
@@ -96,5 +101,5 @@ const playerSlice = createSlice({
     },
 });
 
-export const { clearPlayerError, clearSelectedPlayer } = playerSlice.actions;
+export const { clearPlayerError, clearSelectedPlayer, clearPlayerSuccess } = playerSlice.actions;
 export default playerSlice.reducer;

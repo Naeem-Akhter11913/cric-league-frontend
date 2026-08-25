@@ -31,7 +31,10 @@ import TournamentSettings from "../components/TournamentSettings";
 import Integrations from "../components/Integrations";
 import BackupRestore from "../components/BackupRestore";
 import About from "../components/About";
-import { useAppSelector } from "../store/hooks";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import toast from "react-hot-toast";
+import { createProfile, updateMyProfile } from "../store/action/player.action";
+import { clearPlayerSuccess, clearSelectedPlayer } from "../store/Slice/playerSlice";
 
 /* ------------------------------------------------------------------ */
 /* Static data — swap these out for API data as needed                */
@@ -76,34 +79,86 @@ const INITIAL_STATE = {
   additionalInfo: {
     isIndependent: true,
     forPlayer: "",
-    status: "Available",
+    availability: "Available",
   },
 };
 
+const validation = (dataToValidate) => {
+  for (const [key, value] of Object.entries(dataToValidate)) {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const nestedError = validation(value);
+      if (nestedError) return nestedError;
+      continue;
+    }
+
+    if (key === 'forPlayer' || key === 'isWicketKeeper' || key === "isIndependent") continue;
+
+    if (!value || value === null || value === undefined || value === '') {
+      const fieldName = key
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, str => str.toUpperCase());
+
+      return `Please fill the ${fieldName}`;
+    }
+  }
+
+  return null;
+};
+
+
 export default function OrgSettings() {
-  const { profile, list, selectedPlayer, loading, error, success } = useAppSelector(state => state.userInfo);
+  const { profile, list, loading, error, success } = useAppSelector(state => state.userInfo);
+  const dispatch = useAppDispatch()
   const [form, setForm] = useState(INITIAL_STATE);
+// console.log("LIDT",list)
+  useEffect(() => {
+    // profile
+    if (!Boolean(profile)) return;
 
+    const { personalInfo, battingStyle, availability, bowlingStyle, isIndependent, playerType, forPlayer = null, isWicketKeeper = false } = profile;
 
-  // useEffect(() =>{
-  //   console.log({profile, list, selectedPlayer, loading, error, success})
-  // },[profile, list, selectedPlayer, loading, error, success])
+    const personal = { dob: "", gender: "", city: "", country: "" }
 
-  const createProfile = () => {
+    if (Object.keys(personalInfo).length !== 0) {
+      const { dob, gender, city, country } = personalInfo
+      if (dob) {
+        personal.dob = dob.split("T")[0]
+        personal.city = city;
+        personal.country = country;
+        personal.gender = gender
+      }
+    }
 
-  }
-
-  const updateProfile = () => {
-
-  }
+    const data = {
+      personalInfo: personal,
+      playingDetails: {
+        battingStyle,
+        bowlingStyle,
+        playerType,
+        isWicketKeeper,
+      },
+      additionalInfo: {
+        isIndependent,
+        forPlayer,
+        availability,
+      },
+    };
+    setForm(data);
+  }, [profile])
 
   const handleSubmit = (dataTobeSave) => {
-    console.log(dataTobeSave)
+    const errorValue = validation(dataTobeSave);
+    if (errorValue) {
+      toast.error(errorValue)
+      return;
+    }
+    Boolean(profile) ? dispatch(updateMyProfile(dataTobeSave)) : dispatch(createProfile(dataTobeSave))
+
   }
 
   const settingsMap = {
     General: <GeneralSettings />,
-    Profile: <Profile form={form} setForm={setForm} handleSubmit={handleSubmit} />,
+    Profile: <Profile profile={profile} form={form} setForm={setForm} handleSubmit={handleSubmit} loading={loading} orgList={list} />,
     Security: <Security />,
     Notifications: <Notifications />,
     "Users & Roles": <UsersRoles />,
@@ -117,6 +172,18 @@ export default function OrgSettings() {
   const [activeTab, setActiveTab] = useState(Object.keys(settingsMap)[0]);
   // console.log(activeTab);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearSelectedPlayer()
+      return;
+    }
+    if (success) {
+      toast.success(success);
+      clearPlayerSuccess();
+      return;
+    }
+  }, [error, success]);
   return (
     <div className="h-screen bg-[#F7F7F9] overflow-y-auto no-scrollbar p-6 lg:p-8">
       <div className="mb-6">
