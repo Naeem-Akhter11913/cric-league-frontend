@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Users2,
   CheckCircle2,
@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import Modal from '../model/Modal';
 import CreateTeam from '../components/CreateTeam';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { teamList } from '../store/action/teamActions';
 
 const teamColors = {
   "Royal Warriors": { bg: "#F2B84B", fg: "#7A4B00", label: "RW" },
@@ -98,6 +100,10 @@ const OrgTeams = () => {
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
   const [openModel, setOpenModel] = useState(false);
+  const dispatch = useAppDispatch();
+  const { list } = useAppSelector(state => state.team)
+  console.log(list);
+
 
   const sortOptions = ["Points: High to Low", "Points: Low to High", "Name A-Z", "Most Matches"];
 
@@ -107,6 +113,10 @@ const OrgTeams = () => {
     const matchesSearch = t.name.toLowerCase().includes(listSearch.toLowerCase());
     return matchesTab && matchesSearch;
   });
+
+  useEffect(() => {
+    dispatch(teamList())
+  }, [])
 
   return (
     <>
