@@ -20,7 +20,6 @@ export const createTeam = createAsyncThunk(
 export const teamList = createAsyncThunk(
   'team/list',
   async (payload, { rejectWithValue }) => {
-    console.log({payload});
     try {
       const data = await teamAPI.teamListRequest(payload);
       return data;

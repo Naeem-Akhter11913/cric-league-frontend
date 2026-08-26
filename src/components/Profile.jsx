@@ -81,19 +81,19 @@ const AVAILABILITY = [
   "Retired",
 ];
 
-export default function Profile({ form, setForm, handleSubmit, loading, orgList = [] }) {
+export default function Profile({ form, setForm, handleSubmit, loading, organizerList = [] }) {
 
 
   // Generic setter for any nested field: updateField("personalInfo", "dob", val)
   const MOCK_USERS = useMemo(() => {
-    let datata = orgList.map(item => ({ id: item._id, name: item.name }))
+    let datata = organizerList.map(item => ({ id: item._id, name: item.name }))
     if(datata.length === 1){
       datata = [{id:null,name:"none"},...datata]
     };
 
     return datata
-  }, [orgList]);
-
+  }, [organizerList]);
+console.log(organizerList);
 
   const updateField = (section, field, value) => {
     setForm((prev) => ({

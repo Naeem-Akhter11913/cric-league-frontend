@@ -17,7 +17,10 @@ import {
 import Modal from '../model/Modal';
 import CreateTeam from '../components/CreateTeam';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { teamList } from '../store/action/teamActions';
+import { playerList } from '../store/action/player.action';
+import { createTeam } from '../store/action/teamActions';
+import toast from 'react-hot-toast';
+import { clearTeamError, clearTeamSuccess } from '../store/Slice/teamSlice';
 
 const teamColors = {
   "Royal Warriors": { bg: "#F2B84B", fg: "#7A4B00", label: "RW" },
@@ -101,8 +104,8 @@ const OrgTeams = () => {
   const [page, setPage] = useState(1);
   const [openModel, setOpenModel] = useState(false);
   const dispatch = useAppDispatch();
-  const { list } = useAppSelector(state => state.team)
-  console.log(list);
+  const { list: playersList } = useAppSelector(state => state.players)
+  const { loading, error, success } = useAppSelector(state => state.team);
 
 
   const sortOptions = ["Points: High to Low", "Points: Low to High", "Name A-Z", "Most Matches"];
@@ -114,9 +117,27 @@ const OrgTeams = () => {
     return matchesTab && matchesSearch;
   });
 
+  const createTeamAction = (payload) => {
+    dispatch(createTeam(payload))
+  }
+
   useEffect(() => {
-    dispatch(teamList())
-  }, [])
+    dispatch(playerList({ page: 1, limit: 20 }))
+  }, []);
+  
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearTeamError()
+      return;
+    }
+
+    if (success) {
+      toast.success(success);
+      clearTeamSuccess();
+      return;
+    }
+  }, [error, success])
 
   return (
     <>
@@ -413,7 +434,11 @@ const OrgTeams = () => {
         onClose={() => setOpenModel(false)}
         islogin
       >
-        <CreateTeam />
+        <CreateTeam
+          players={playersList}
+          submitTeam={createTeamAction}
+          loading={loading}
+        />
       </Modal>
     </>
   )

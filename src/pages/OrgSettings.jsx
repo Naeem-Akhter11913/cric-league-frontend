@@ -35,6 +35,8 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import toast from "react-hot-toast";
 import { createProfile, updateMyProfile } from "../store/action/player.action";
 import { clearPlayerSuccess, clearSelectedPlayer } from "../store/Slice/playerSlice";
+import { teamList } from "../store/action/teamActions";
+import { organizerList } from "../store/action/organizer.action";
 
 /* ------------------------------------------------------------------ */
 /* Static data — swap these out for API data as needed                */
@@ -107,14 +109,21 @@ const validation = (dataToValidate) => {
 
 
 export default function OrgSettings() {
-  const { profile, list, loading, error, success } = useAppSelector(state => state.userInfo);
+  const { profile, list, loading, error, success } = useAppSelector(state => state.players);
+
+  const {
+    profile: organizerProfile,
+    organizerList: organizerListData,
+    loading: organizerLoading,
+    error: organizerError,
+    success: organizerSuccess,
+  } = useAppSelector(state => state.organizer);
   const dispatch = useAppDispatch()
   const [form, setForm] = useState(INITIAL_STATE);
-// console.log("LIDT",list)
+  // console.log("LIDT",organizerListData)
   useEffect(() => {
     // profile
     if (!Boolean(profile)) return;
-
     const { personalInfo, battingStyle, availability, bowlingStyle, isIndependent, playerType, forPlayer = null, isWicketKeeper = false } = profile;
 
     const personal = { dob: "", gender: "", city: "", country: "" }
@@ -158,7 +167,7 @@ export default function OrgSettings() {
 
   const settingsMap = {
     General: <GeneralSettings />,
-    Profile: <Profile profile={profile} form={form} setForm={setForm} handleSubmit={handleSubmit} loading={loading} orgList={list} />,
+    Profile: <Profile profile={profile} form={form} setForm={setForm} handleSubmit={handleSubmit} loading={loading} organizerList={organizerListData} />,
     Security: <Security />,
     Notifications: <Notifications />,
     "Users & Roles": <UsersRoles />,
@@ -184,6 +193,14 @@ export default function OrgSettings() {
       return;
     }
   }, [error, success]);
+
+
+
+  useEffect(() => {
+    dispatch(organizerList({ page: 1, limit: 20 }));
+  }, []);
+
+
   return (
     <div className="h-screen bg-[#F7F7F9] overflow-y-auto no-scrollbar p-6 lg:p-8">
       <div className="mb-6">

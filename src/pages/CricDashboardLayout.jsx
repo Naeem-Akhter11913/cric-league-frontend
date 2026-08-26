@@ -24,7 +24,7 @@ import ShowModel from '../model/ShowModel';
 import UserLogout from '../components/UserLogout';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/action/auth.action';
-import { getMyProfile, orgList } from '../store/action/player.action';
+import { getMyProfile, playerList } from '../store/action/player.action';
 
 const CricDashboard = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -147,7 +147,7 @@ const CricDashboard = () => {
         if (calledRef.current) return;
         calledRef.current = true;
         dispatch(getMyProfile({user}));
-        dispatch(orgList());
+        dispatch(playerList());
     }, [user]);
 
     return (

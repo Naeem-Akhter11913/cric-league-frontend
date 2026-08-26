@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { createProfile, getMyProfile, playerGetById, orgList, updateMyProfile } from '../action/player.action';
+import { createProfile, getMyProfile, playerGetById, playerList, updateMyProfile } from '../action/player.action';
 
 
 const initialState = {
@@ -72,15 +72,15 @@ const playerSlice = createSlice({
             })
 
             // Player List
-            .addCase(orgList.pending, (state) => {
+            .addCase(playerList.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(orgList.fulfilled, (state, action) => {
+            .addCase(playerList.fulfilled, (state, action) => {
                 state.loading = false;
                 state.list = action.payload.data;
             })
-            .addCase(orgList.rejected, (state, action) => {
+            .addCase(playerList.rejected, (state, action) => {
                 state.loading = false;
                 // state.error = action.payload;
             })

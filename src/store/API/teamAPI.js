@@ -2,7 +2,7 @@ import axiosInstance from '../../api/axiosInstance';
 
 export const createTeamRequest = payload => axiosInstance.post('/teams', payload).then((res) => res.data);
 
-export const teamListRequest = payload => axiosInstance.get('/teams').then((res) => res.data);
+export const teamListRequest = payload => axiosInstance.get('/teams', { params: payload }).then((res) => res.data);
 
 export const teamGetByIdRequest = id => axiosInstance.get(`/teams/${id}`).then((res) => res.data);
 
