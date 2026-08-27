@@ -3,6 +3,7 @@ import authReducer from './Slice/authSlice';
 import playerSlice from './Slice/playerSlice';
 import teamSlice from './Slice/teamSlice';
 import organizerSlice from './Slice/organizerSlice';
+import venueSlice from './Slice/venueSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     players: playerSlice,
     team: teamSlice,
     organizer: organizerSlice,
+    venue: venueSlice,
   },
 });

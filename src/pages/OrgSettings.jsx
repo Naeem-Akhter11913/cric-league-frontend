@@ -35,7 +35,6 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import toast from "react-hot-toast";
 import { createProfile, updateMyProfile } from "../store/action/player.action";
 import { clearPlayerSuccess, clearSelectedPlayer } from "../store/Slice/playerSlice";
-import { teamList } from "../store/action/teamActions";
 import { organizerList } from "../store/action/organizer.action";
 
 /* ------------------------------------------------------------------ */

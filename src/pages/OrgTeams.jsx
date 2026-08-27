@@ -18,7 +18,7 @@ import Modal from '../model/Modal';
 import CreateTeam from '../components/CreateTeam';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { playerList } from '../store/action/player.action';
-import { createTeam } from '../store/action/teamActions';
+import { createTeam, teamList } from '../store/action/teamActions';
 import toast from 'react-hot-toast';
 import { clearTeamError, clearTeamSuccess } from '../store/Slice/teamSlice';
 
@@ -105,8 +105,7 @@ const OrgTeams = () => {
   const [openModel, setOpenModel] = useState(false);
   const dispatch = useAppDispatch();
   const { list: playersList } = useAppSelector(state => state.players)
-  const { loading, error, success } = useAppSelector(state => state.team);
-
+  const { loading, error, success,list:allTeamList } = useAppSelector(state => state.team);
 
   const sortOptions = ["Points: High to Low", "Points: Low to High", "Name A-Z", "Most Matches"];
 
@@ -122,7 +121,8 @@ const OrgTeams = () => {
   }
 
   useEffect(() => {
-    dispatch(playerList({ page: 1, limit: 20 }))
+    dispatch(playerList({ page: 1, limit: 20 }));
+    dispatch(teamList({ page: 1, limit: 20 }))
   }, []);
   
   useEffect(() => {
@@ -137,7 +137,7 @@ const OrgTeams = () => {
       clearTeamSuccess();
       return;
     }
-  }, [error, success])
+  }, [error, success]);
 
   return (
     <>
