@@ -3,7 +3,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 
 const ShowModel = ({ open, onClose, title, children }) => {
     return (
-        <Dialog open={open} onClose={onClose} className="relative z-10">
+        <Dialog open={open} onClose={onClose} className="relative inset-0 z-50">
             <DialogBackdrop
                 transition
                 className="fixed inset-0 bg-gray-900/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -32,7 +32,9 @@ import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { clearTeamError, clearTeamSuccess } from "../store/Slice/teamSlice";
 import { clearVenueError, clearVenueSuccess } from "../store/Slice/venueSlice";
-import { venueTeam } from "../store/action/venue.action";
+import { venueList, venueTeam } from "../store/action/venue.action";
+import ShowModel from "../model/ShowModel";
+import DeleteComponent from "../components/DeleteComponent";
 
 
 const STAT_CARDS = [
@@ -42,68 +44,68 @@ const STAT_CARDS = [
   { icon: Building2, label: "Total Cities", value: "12", sub: "Cities with venues", bg: "bg-sky-50", fg: "text-sky-500" },
 ];
 
-const VENUES = [
-  {
-    name: "Green Valley Cricket Ground",
-    address: "Sector 21, Near Sports Complex",
-    city: "Delhi",
-    state: "Delhi",
-    surface: "Grass",
-    surfaceType: "Natural",
-    surfaceColor: "bg-emerald-100 text-emerald-700",
-    capacity: "5,000",
-    status: "Active",
-    gradient: "from-emerald-300 to-emerald-500",
-  },
-  {
-    name: "City Cricket Stadium",
-    address: "MG Road, Near Metro Station",
-    city: "Mumbai",
-    state: "Maharashtra",
-    surface: "Turf",
-    surfaceType: "Synthetic",
-    surfaceColor: "bg-orange-100 text-orange-700",
-    capacity: "10,000",
-    status: "Active",
-    gradient: "from-sky-300 to-sky-500",
-  },
-  {
-    name: "Riverside Sports Arena",
-    address: "River View Road, Near Bridge",
-    city: "Kolkata",
-    state: "West Bengal",
-    surface: "Grass",
-    surfaceType: "Natural",
-    surfaceColor: "bg-emerald-100 text-emerald-700",
-    capacity: "3,500",
-    status: "Active",
-    gradient: "from-teal-300 to-teal-500",
-  },
-  {
-    name: "Sunshine Cricket Ground",
-    address: "Park Avenue, Central Park",
-    city: "Bangalore",
-    state: "Karnataka",
-    surface: "Turf",
-    surfaceType: "Synthetic",
-    surfaceColor: "bg-orange-100 text-orange-700",
-    capacity: "7,000",
-    status: "Inactive",
-    gradient: "from-slate-300 to-slate-400",
-  },
-  {
-    name: "Royal Cricket Ground",
-    address: "Old Airport Road, Near Terminal",
-    city: "Hyderabad",
-    state: "Telangana",
-    surface: "Grass",
-    surfaceType: "Natural",
-    surfaceColor: "bg-emerald-100 text-emerald-700",
-    capacity: "8,000",
-    status: "Active",
-    gradient: "from-lime-300 to-lime-500",
-  },
-];
+// const VENUES = [
+//   {
+//     name: "Green Valley Cricket Ground",
+//     address: "Sector 21, Near Sports Complex",
+//     city: "Delhi",
+//     state: "Delhi",
+//     surface: "Grass",
+//     surfaceType: "Natural",
+//     surfaceColor: "bg-emerald-100 text-emerald-700",
+//     capacity: "5,000",
+//     status: "Active",
+//     gradient: "from-emerald-300 to-emerald-500",
+//   },
+//   {
+//     name: "City Cricket Stadium",
+//     address: "MG Road, Near Metro Station",
+//     city: "Mumbai",
+//     state: "Maharashtra",
+//     surface: "Turf",
+//     surfaceType: "Synthetic",
+//     surfaceColor: "bg-orange-100 text-orange-700",
+//     capacity: "10,000",
+//     status: "Active",
+//     gradient: "from-sky-300 to-sky-500",
+//   },
+//   {
+//     name: "Riverside Sports Arena",
+//     address: "River View Road, Near Bridge",
+//     city: "Kolkata",
+//     state: "West Bengal",
+//     surface: "Grass",
+//     surfaceType: "Natural",
+//     surfaceColor: "bg-emerald-100 text-emerald-700",
+//     capacity: "3,500",
+//     status: "Active",
+//     gradient: "from-teal-300 to-teal-500",
+//   },
+//   {
+//     name: "Sunshine Cricket Ground",
+//     address: "Park Avenue, Central Park",
+//     city: "Bangalore",
+//     state: "Karnataka",
+//     surface: "Turf",
+//     surfaceType: "Synthetic",
+//     surfaceColor: "bg-orange-100 text-orange-700",
+//     capacity: "7,000",
+//     status: "Inactive",
+//     gradient: "from-slate-300 to-slate-400",
+//   },
+//   {
+//     name: "Royal Cricket Ground",
+//     address: "Old Airport Road, Near Terminal",
+//     city: "Hyderabad",
+//     state: "Telangana",
+//     surface: "Grass",
+//     surfaceType: "Natural",
+//     surfaceColor: "bg-emerald-100 text-emerald-700",
+//     capacity: "8,000",
+//     status: "Active",
+//     gradient: "from-lime-300 to-lime-500",
+//   },
+// ];
 
 const VENUE_SUMMARY = [
   { name: "Active", value: 38, pct: "90.5%", color: "#22C55E" },
@@ -218,13 +220,13 @@ const validateVenueForm = (form, amenities, images) => {
 };
 export default function OrgVenues() {
   const dispatch = useAppDispatch();
-  const { loading, error, success } = useAppSelector(state => state.venue)
+  const { loading, error, success, list: allVenueInList, totalPages, venueCount } = useAppSelector(state => state.venue)
 
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [vanueForm, setVanueForm] = useState({
-    venueName: "Naeem Akhter",
-    city: "Purnia",
+    venueName: "",
+    city: "",
     surfaceType: "",
     surfaceBehavior: "",
     capacity: "",
@@ -251,7 +253,46 @@ export default function OrgVenues() {
   ]);
   const [amenityInput, setAmenityInput] = useState("");
   const [images, setImages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [openDeleteModel, setOpenDeleteModel] = useState(false)
+  const [openOwnerModel, setOpenOwnerModel] = useState(false);
+  const [isModelOpenForUpdate, setisModelOpenForUpdate] = useState(false)
 
+
+  const handleDelete = (item) => {
+    console.log(item)
+    setOpenDeleteModel(true)
+  }
+  const handleView = (item) => { console.log(item) }
+
+  const handleEdit = (item) => {
+    console.log(item.name)
+    setVanueForm({
+      venueName: item.name,
+      city: item.city,
+      surfaceType: item.surface.type,
+      surfaceBehavior: item.surface.behavior,
+      capacity: item.capacity,
+      floodLights: item.floodLights,
+      indoorOutdoor: item.indoorOutdoor,
+      pitchCount: item.pitchCount,
+      addressLine1: item.address.line1,
+      addressLine2: item.address.line2,
+      area: item.address.area,
+      state: item.address.state,
+      country: item.address.country,
+      pincode: item.address.pincode,
+      contactName: item.contact.name,
+      contactNumber: item.contact.number,
+      email: item.contact.email,
+      description: item.description,
+    });
+    setImages(item.images || []);
+    setAmenities(item.amenities || []);
+    setisModelOpenForUpdate(true)
+    setIsModalOpen(true)
+  }
 
 
   const saveData = () => {
@@ -288,7 +329,7 @@ export default function OrgVenues() {
       },
       description: vanueForm.description,
       amenities,
-      images,
+      images: ["jkdfhs", "dkjfh"],
     };
     dispatch(venueTeam(payload));
   };
@@ -296,6 +337,9 @@ export default function OrgVenues() {
   const handleAndAddAnother = () => { saveData() }
   const handleOnSave = () => { saveData() }
 
+  const getAllVenue = async () => {
+    dispatch(venueList())
+  }
 
   useEffect(() => {
     if (error) {
@@ -306,6 +350,7 @@ export default function OrgVenues() {
 
     if (success) {
       toast.success(success);
+      getAllVenue()
       clearVenueSuccess();
       setIsModalOpen(false);
       setVanueForm({
@@ -331,6 +376,32 @@ export default function OrgVenues() {
       return;
     }
   }, [error, success]);
+
+  useEffect(() => {
+    getAllVenue()
+  }, []);
+
+
+  const VENUES = useMemo(() => {
+    return allVenueInList.map(item => {
+      return {
+        name: item.name,
+        address: item.address.line1,
+        city: item.city,
+        state: item.address.state,
+        surface: item.surface.behavior,
+        surfaceType: item.surface.type,
+        surfaceColor: "bg-orange-100 text-orange-700",
+        capacity: item.capacity,
+        status: item.status,
+        gradient: "from-sky-300 to-sky-500",
+        id: item._id,
+        groundOwner: item.createdBy,
+        description:item.description,
+        contact:item.contact
+      }
+    })
+  }, [allVenueInList])
 
   return (
     <div className="h-screen bg-[#F7F7F9] overflow-y-auto no-scrollbar p-6 lg:p-8">
@@ -459,13 +530,13 @@ export default function OrgVenues() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
-                          <button className="rounded-lg border border-indigo-100 p-1.5 text-indigo-500 hover:bg-indigo-50">
+                          <button onClick={() => handleEdit(v)} className="rounded-lg border border-indigo-100 p-1.5 text-indigo-500 hover:bg-indigo-50">
                             <Pencil size={14} />
                           </button>
-                          <button className="rounded-lg border border-sky-100 p-1.5 text-sky-500 hover:bg-sky-50">
+                          <button onClick={() => handleView(v)} className="rounded-lg border border-sky-100 p-1.5 text-sky-500 hover:bg-sky-50">
                             <Eye size={14} />
                           </button>
-                          <button className="rounded-lg border border-rose-100 p-1.5 text-rose-500 hover:bg-rose-50">
+                          <button onClick={() => handleDelete(v)} className="rounded-lg border border-rose-100 p-1.5 text-rose-500 hover:bg-rose-50">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -478,33 +549,50 @@ export default function OrgVenues() {
 
             {/* Pagination footer */}
             <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-sm text-slate-500">Showing 1 to 5 of 42 venues</span>
+
+              <span className="text-sm text-slate-500">
+                Showing{" "}
+                {venueCount === 0 ? 0 : (currentPage - 1) * limit + 1}
+                {" "}to{" "}
+                {Math.min(currentPage * limit, venueCount)}
+                {" "}of {venueCount} venues
+              </span>
+
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50">
+
+                  {/* Previous */}
+                  <button
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                    disabled={currentPage === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
                     <ChevronLeft size={16} />
                   </button>
-                  {[1, 2, 3].map((p) => (
+
+                  {/* Pages */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                     <button
                       key={p}
-                      className={`h-8 w-8 rounded-lg text-sm font-medium ${p === 1 ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                      onClick={() => setCurrentPage(p)}
+                      className={`h-8 w-8 rounded-lg text-sm font-medium ${p === currentPage
+                        ? "bg-indigo-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
                         }`}
                     >
                       {p}
                     </button>
                   ))}
-                  <span className="px-1 text-slate-400">...</span>
-                  <button className="h-8 w-8 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">
-                    9
-                  </button>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50">
+
+                  {/* Next */}
+                  <button
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
                     <ChevronRight size={16} />
                   </button>
                 </div>
-                <button className="ml-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 shadow-sm hover:bg-slate-50">
-                  5 / page
-                  <ChevronDown size={14} className="text-slate-400" />
-                </button>
               </div>
             </div>
           </div>
@@ -592,9 +680,13 @@ export default function OrgVenues() {
 
       <Modal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false)
+          isModelOpenForUpdate(false)
+        }}
         onSave={handleOnSave}
         onSaveAndAddAnother={handleAndAddAnother}
+        isModelOpenForUpdate={isModelOpenForUpdate}
       >
         <AddNewVenue
           form={vanueForm}
@@ -607,6 +699,17 @@ export default function OrgVenues() {
           setImages={setImages}
         />
       </Modal>
+
+      <ShowModel
+        open={openDeleteModel}
+        onClose={() => setOpenDeleteModel(false)}
+        title={"Are you sure you want to delete this venue? This action cannot be undone."}
+      >
+        <DeleteComponent
+          onCancel={() => setOpenDeleteModel(false)}
+          onDelete={handleDelete}
+        />
+      </ShowModel>
     </div>
   );
 }

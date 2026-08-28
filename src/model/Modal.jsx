@@ -6,7 +6,8 @@ const Modal = ({
   children,
   onSave,
   onSaveAndAddAnother,
-  islogin
+  islogin,
+  isModelOpenForUpdate
 }) => {
   if (!open) return null;
 
@@ -42,21 +43,33 @@ const Modal = ({
             Cancel
           </button>
 
-          <button
-            type="button"
-            onClick={() => onSaveAndAddAnother(true)}
-            className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer"
-          >
-            Save & Add Another
-          </button>
+          {isModelOpenForUpdate ?
 
-          <button
-            type="button"
-            onClick={() => onSave(false)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
-          >
-            Save
-          </button>
+            <button
+              type="button"
+              onClick={() => onSave(false)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
+            >
+              Update
+            </button>
+            :
+            <>
+              <button
+                type="button"
+                onClick={() => onSaveAndAddAnother(true)}
+                className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer"
+              >
+                Save & Add Another
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSave(false)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
+              >
+                Save
+              </button>
+            </>}
         </div>}
       </div>
     </div>

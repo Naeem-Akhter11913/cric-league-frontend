@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { venueTeam } from "../action/venue.action";
+import { venueList, venueTeam } from "../action/venue.action";
 
 
 
@@ -7,6 +7,8 @@ import { venueTeam } from "../action/venue.action";
 const initialState = {
     venue: null,
     list: [],
+    venueCount:0,
+    totalPages:0,
     selectedVenue: null,
     // teamPlayers: [],
     loading: false,
@@ -49,6 +51,21 @@ const teamSlice = createSlice({
             .addCase(venueTeam.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+
+            // Get Vanue in List
+            .addCase(venueList.pending, state => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(venueList.fulfilled, (state, action) => {
+                state.loading = false;
+                state.list = action.payload.data.data;
+                state.venueCount = action.payload.data.totalCount;
+                state.totalPages = action.payload.data.totalPages;
+            })
+            .addCase(venueList.rejected, (state) => {
+                state.loading = false;
             })
 
     },
