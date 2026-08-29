@@ -1,6 +1,6 @@
 import React from "react";
 
-const DeleteComponent = ({ onCancel, onDelete }) => {
+const DeleteComponent = ({ onCancel, onDelete, loading }) => {
   return (
     <div className="w-full">
       <div className="flex justify-end gap-3">
@@ -15,7 +15,7 @@ const DeleteComponent = ({ onCancel, onDelete }) => {
           onClick={onDelete}
           className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700"
         >
-          Yes, Delete
+          {loading ? "Deleting..." : "Yes, Delete"}
         </button>
       </div>
     </div>

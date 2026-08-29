@@ -7,7 +7,9 @@ const Modal = ({
   onSave,
   onSaveAndAddAnother,
   islogin,
-  isModelOpenForUpdate
+  isModelOpenForUpdate,
+  handleUpdate,
+  loading
 }) => {
   if (!open) return null;
 
@@ -47,10 +49,10 @@ const Modal = ({
 
             <button
               type="button"
-              onClick={() => onSave(false)}
+              onClick={() => handleUpdate(false)}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
             >
-              Update
+              {loading ? "Update...": "Update"}
             </button>
             :
             <>

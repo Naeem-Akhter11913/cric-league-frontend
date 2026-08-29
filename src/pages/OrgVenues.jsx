@@ -15,7 +15,6 @@ import {
   ChevronDown,
   ListFilter,
   Pencil,
-  Eye,
   Trash2,
   ChevronLeft,
   ChevronRight,
@@ -24,7 +23,6 @@ import {
   Upload,
   Map,
   Landmark,
-  X,
 } from "lucide-react";
 import Modal from "../model/Modal";
 import AddNewVenue from "../components/AddNewVenue";
@@ -32,86 +30,11 @@ import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { clearTeamError, clearTeamSuccess } from "../store/Slice/teamSlice";
 import { clearVenueError, clearVenueSuccess } from "../store/Slice/venueSlice";
-import { venueList, venueTeam } from "../store/action/venue.action";
+import { venueDelete, venueList, venueTeam, venueUpdate } from "../store/action/venue.action";
 import ShowModel from "../model/ShowModel";
 import DeleteComponent from "../components/DeleteComponent";
 
-
-const STAT_CARDS = [
-  { icon: MapPin, label: "Total Venues", value: "42", sub: "All registered venues", bg: "bg-violet-50", fg: "text-violet-500" },
-  { icon: MapPin, label: "Active Venues", value: "38", sub: "Currently active", bg: "bg-emerald-50", fg: "text-emerald-500" },
-  { icon: ShieldOff, label: "Inactive Venues", value: "4", sub: "Temporarily inactive", bg: "bg-amber-50", fg: "text-amber-500" },
-  { icon: Building2, label: "Total Cities", value: "12", sub: "Cities with venues", bg: "bg-sky-50", fg: "text-sky-500" },
-];
-
-// const VENUES = [
-//   {
-//     name: "Green Valley Cricket Ground",
-//     address: "Sector 21, Near Sports Complex",
-//     city: "Delhi",
-//     state: "Delhi",
-//     surface: "Grass",
-//     surfaceType: "Natural",
-//     surfaceColor: "bg-emerald-100 text-emerald-700",
-//     capacity: "5,000",
-//     status: "Active",
-//     gradient: "from-emerald-300 to-emerald-500",
-//   },
-//   {
-//     name: "City Cricket Stadium",
-//     address: "MG Road, Near Metro Station",
-//     city: "Mumbai",
-//     state: "Maharashtra",
-//     surface: "Turf",
-//     surfaceType: "Synthetic",
-//     surfaceColor: "bg-orange-100 text-orange-700",
-//     capacity: "10,000",
-//     status: "Active",
-//     gradient: "from-sky-300 to-sky-500",
-//   },
-//   {
-//     name: "Riverside Sports Arena",
-//     address: "River View Road, Near Bridge",
-//     city: "Kolkata",
-//     state: "West Bengal",
-//     surface: "Grass",
-//     surfaceType: "Natural",
-//     surfaceColor: "bg-emerald-100 text-emerald-700",
-//     capacity: "3,500",
-//     status: "Active",
-//     gradient: "from-teal-300 to-teal-500",
-//   },
-//   {
-//     name: "Sunshine Cricket Ground",
-//     address: "Park Avenue, Central Park",
-//     city: "Bangalore",
-//     state: "Karnataka",
-//     surface: "Turf",
-//     surfaceType: "Synthetic",
-//     surfaceColor: "bg-orange-100 text-orange-700",
-//     capacity: "7,000",
-//     status: "Inactive",
-//     gradient: "from-slate-300 to-slate-400",
-//   },
-//   {
-//     name: "Royal Cricket Ground",
-//     address: "Old Airport Road, Near Terminal",
-//     city: "Hyderabad",
-//     state: "Telangana",
-//     surface: "Grass",
-//     surfaceType: "Natural",
-//     surfaceColor: "bg-emerald-100 text-emerald-700",
-//     capacity: "8,000",
-//     status: "Active",
-//     gradient: "from-lime-300 to-lime-500",
-//   },
-// ];
-
-const VENUE_SUMMARY = [
-  { name: "Active", value: 38, pct: "90.5%", color: "#22C55E" },
-  { name: "Inactive", value: 4, pct: "9.5%", color: "#FBBF24" },
-];
-
+// ---- static UI config (not derived from server data) ----
 const QUICK_ACTIONS = [
   { icon: Plus, label: "Add New Venue" },
   { icon: Download, label: "Import Venues" },
@@ -127,23 +50,36 @@ const TOP_CITIES = [
   { city: "Hyderabad", count: 3 },
 ];
 
-const BEHAVIOR = [
-  "batting_friendly",
-  "bowling_friendly",
-  "spin_friendly",
-  "pace_friendly",
-  "balanced",
-  "slow",
-  "fast"
-]
-
+// single source of truth for the (empty) venue form shape — reused on
+// open, cancel, and post-save reset instead of being retyped 3x
+const EMPTY_VENUE_FORM = {
+  venueName: "",
+  city: "",
+  surfaceType: "",
+  surfaceBehavior: "",
+  capacity: "",
+  floodLights: true,
+  indoorOutdoor: "",
+  pitchCount: "",
+  addressLine1: "",
+  addressLine2: "",
+  area: "",
+  state: "",
+  country: "",
+  pincode: "",
+  contactName: "",
+  contactNumber: "",
+  email: "",
+  description: "",
+};
 
 function StatusPill({ status }) {
   const active = status === "Active";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${active ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-        }`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+        active ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+      }`}
     >
       {status}
     </span>
@@ -161,89 +97,109 @@ function VenueThumb({ gradient }) {
 const validateVenueForm = (form, amenities, images) => {
   const errors = {};
 
-  if (!form.venueName?.trim()) return errors.venueName = "Venue name is required";
-  if (!form.city?.trim()) return errors.city = "City is required";
-  if (!form.surfaceType?.trim()) return errors.surfaceType = "Surface type is required";
-  if (!form.surfaceBehavior?.trim()) return errors.surfaceBehavior = "Surface behavior is required";
+  if (!form.venueName?.trim()) errors.venueName = "Venue name is required";
+  if (!form.city?.trim()) errors.city = "City is required";
+  if (!form.surfaceType?.trim()) errors.surfaceType = "Surface type is required";
+  if (!form.surfaceBehavior?.trim()) errors.surfaceBehavior = "Surface behavior is required";
 
   if (!form.capacity?.toString().trim()) {
-    return errors.capacity = "Capacity is required";
+    errors.capacity = "Capacity is required";
   } else if (isNaN(Number(form.capacity)) || Number(form.capacity) <= 0) {
-    return errors.capacity = "Capacity must be a positive number";
+    errors.capacity = "Capacity must be a positive number";
   }
 
-  if (!form.indoorOutdoor?.trim()) return errors.indoorOutdoor = "Indoor / Outdoor is required";
+  if (!form.indoorOutdoor?.trim()) errors.indoorOutdoor = "Indoor / Outdoor is required";
 
   if (!form.pitchCount?.toString().trim()) {
-    return errors.pitchCount = "Pitch count is required";
+    errors.pitchCount = "Pitch count is required";
   } else if (isNaN(Number(form.pitchCount)) || Number(form.pitchCount) <= 0) {
-    return errors.pitchCount = "Pitch count must be a positive number";
+    errors.pitchCount = "Pitch count must be a positive number";
   }
 
-  if (!form.addressLine1?.trim()) return errors.addressLine1 = "Address line 1 is required";
-  if (!form.addressLine2?.trim()) return errors.addressLine2 = "Address line 2 is required";
-  if (!form.area?.trim()) return errors.area = "Area / Locality is required";
-  if (!form.state?.trim()) return errors.state = "State is required";
-  if (!form.country?.trim()) return errors.country = "Country is required";
+  if (!form.addressLine1?.trim()) errors.addressLine1 = "Address line 1 is required";
+  if (!form.addressLine2?.trim()) errors.addressLine2 = "Address line 2 is required";
+  if (!form.area?.trim()) errors.area = "Area / Locality is required";
+  if (!form.state?.trim()) errors.state = "State is required";
+  if (!form.country?.trim()) errors.country = "Country is required";
 
   if (!form.pincode?.trim()) {
-    return errors.pincode = "Pincode is required";
+    errors.pincode = "Pincode is required";
   } else if (!/^\d{4,10}$/.test(form.pincode.trim())) {
-    return errors.pincode = "Enter a valid pincode";
+    errors.pincode = "Enter a valid pincode";
   }
 
-  if (!form.contactName?.trim()) return errors.contactName = "Contact name is required";
+  if (!form.contactName?.trim()) errors.contactName = "Contact name is required";
 
   if (!form.contactNumber?.trim()) {
-    return errors.contactNumber = "Contact number is required";
+    errors.contactNumber = "Contact number is required";
   } else if (!/^\+?\d{7,15}$/.test(form.contactNumber.trim())) {
-    return errors.contactNumber = "Enter a valid contact number";
+    errors.contactNumber = "Enter a valid contact number";
   }
 
   if (!form.email?.trim()) {
-    return errors.email = "Email is required";
+    errors.email = "Email is required";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    return errors.email = "Enter a valid email address";
+    errors.email = "Enter a valid email address";
   }
 
-  if (!form.description?.trim()) return errors.description = "Description is required";
+  if (!form.description?.trim()) errors.description = "Description is required";
 
   if (!amenities || amenities.length === 0) {
-    return errors.amenities = "Add at least one amenity";
+    errors.amenities = "Add at least one amenity";
   }
 
   if (!images || images.length === 0) {
-    return errors.images = "Add at least one image";
+    errors.images = "Add at least one image";
   }
 
   return errors;
 };
+
+// NOTE: this used to always send the hardcoded images ["jkdfhs","dkjfh"]
+// regardless of what the user uploaded — now takes images as a real param.
+const generatePayload = (venueForm, amenities, images) => ({
+  name: venueForm.venueName,
+  city: venueForm.city,
+  surface: {
+    type: venueForm.surfaceType,
+    behavior: venueForm.surfaceBehavior,
+  },
+  capacity: Number(venueForm.capacity),
+  floodLights: venueForm.floodLights,
+  indoorOutdoor: venueForm.indoorOutdoor,
+  pitchCount: Number(venueForm.pitchCount),
+  address: {
+    line1: venueForm.addressLine1,
+    line2: venueForm.addressLine2,
+    area: venueForm.area,
+    state: venueForm.state,
+    country: venueForm.country,
+    pincode: Number(venueForm.pincode),
+  },
+  contact: {
+    name: venueForm.contactName,
+    number: Number(venueForm.contactNumber),
+    email: venueForm.email,
+  },
+  description: venueForm.description,
+  amenities,
+  images,
+});
+
 export default function OrgVenues() {
   const dispatch = useAppDispatch();
-  const { loading, error, success, list: allVenueInList, totalPages, venueCount } = useAppSelector(state => state.venue)
+  const {
+    loading,
+    error,
+    success,
+    list: allVenueInList,
+    totalPages,
+    venueCount,
+  } = useAppSelector((state) => state.venue);
 
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [vanueForm, setVanueForm] = useState({
-    venueName: "",
-    city: "",
-    surfaceType: "",
-    surfaceBehavior: "",
-    capacity: "",
-    floodLights: true,
-    indoorOutdoor: "",
-    pitchCount: "",
-    addressLine1: "",
-    addressLine2: "",
-    area: "",
-    state: "",
-    country: "",
-    pincode: "",
-    contactName: "",
-    contactNumber: "",
-    email: "",
-    description: "",
-  });
+  const [vanueForm, setVanueForm] = useState(EMPTY_VENUE_FORM);
   const [amenities, setAmenities] = useState([
     "Parking",
     "Changing Room",
@@ -254,35 +210,54 @@ export default function OrgVenues() {
   const [amenityInput, setAmenityInput] = useState("");
   const [images, setImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(5);
-  const [openDeleteModel, setOpenDeleteModel] = useState(false)
-  const [openOwnerModel, setOpenOwnerModel] = useState(false);
-  const [isModelOpenForUpdate, setisModelOpenForUpdate] = useState(false)
+  const [limit] = useState(5);
+  const [openDeleteModel, setOpenDeleteModel] = useState(false);
+  const [isModelOpenForUpdate, setisModelOpenForUpdate] = useState(false);
 
+  // was missing before: without tracking *which* venue is being edited/
+  // deleted, update had no venueId to send and delete had nothing to act on
+  const [editingVenueId, setEditingVenueId] = useState(null);
+  const [venueToDelete, setVenueToDelete] = useState(null);
 
-  const handleDelete = (item) => {
-    console.log(item)
-    setOpenDeleteModel(true)
-  }
-  const handleView = (item) => { console.log(item) }
+  const resetForm = () => {
+    setVanueForm(EMPTY_VENUE_FORM);
+    setImages([]);
+    setAmenities([]);
+    setEditingVenueId(null);
+  };
+
+  const handleDeleteClick = (item) => {
+    setVenueToDelete(item);
+    setOpenDeleteModel(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!venueToDelete) return;
+    // TODO: wire up your actual delete thunk here, e.g.:
+    // dispatch(venueDelete(venueToDelete.id)).then(() => getAllVenue());
+    // console.log("deleting venue", venueToDelete.id);
+    // return;
+    dispatch(venueDelete(venueToDelete.id))
+    setOpenDeleteModel(false);
+    setVenueToDelete(null);
+  };
 
   const handleEdit = (item) => {
-    console.log(item.name)
     setVanueForm({
       venueName: item.name,
       city: item.city,
-      surfaceType: item.surface.type,
-      surfaceBehavior: item.surface.behavior,
+      surfaceType: item.surfaceType,
+      surfaceBehavior: item.surface,
       capacity: item.capacity,
       floodLights: item.floodLights,
       indoorOutdoor: item.indoorOutdoor,
       pitchCount: item.pitchCount,
-      addressLine1: item.address.line1,
-      addressLine2: item.address.line2,
-      area: item.address.area,
-      state: item.address.state,
-      country: item.address.country,
-      pincode: item.address.pincode,
+      addressLine1: item.addressObj.line1,
+      addressLine2: item.addressObj.line2,
+      area: item.addressObj.area,
+      state: item.addressObj.state,
+      country: item.addressObj.country,
+      pincode: item.addressObj.pincode,
       contactName: item.contact.name,
       contactNumber: item.contact.number,
       email: item.contact.email,
@@ -290,118 +265,135 @@ export default function OrgVenues() {
     });
     setImages(item.images || []);
     setAmenities(item.amenities || []);
-    setisModelOpenForUpdate(true)
-    setIsModalOpen(true)
-  }
+    setEditingVenueId(item.id);
+    setisModelOpenForUpdate(true);
+    setIsModalOpen(true);
+  };
 
+  const handleUpdate = () => {
+    const errors = validateVenueForm(vanueForm, amenities, images);
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors)[0]);
+      return;
+    }
+    if (!editingVenueId) {
+      toast.error("No venue selected to update");
+      return;
+    }
+    const payload = generatePayload(vanueForm, amenities, images);
+    dispatch(venueUpdate({ payload, venueId: editingVenueId }));
+  };
 
   const saveData = () => {
     const errors = validateVenueForm(vanueForm, amenities, images);
-
     if (Object.keys(errors).length > 0) {
-      toast.error(errors);
+      toast.error(Object.values(errors)[0]);
       return;
     }
-
-    const payload = {
-      name: vanueForm.venueName,
-      city: vanueForm.city,
-      surface: {
-        type: vanueForm.surfaceType,
-        behavior: vanueForm.surfaceBehavior,
-      },
-      capacity: Number(vanueForm.capacity),
-      floodLights: vanueForm.floodLights,
-      indoorOutdoor: vanueForm.indoorOutdoor,
-      pitchCount: Number(vanueForm.pitchCount),
-      address: {
-        line1: vanueForm.addressLine1,
-        line2: vanueForm.addressLine2,
-        area: vanueForm.area,
-        state: vanueForm.state,
-        country: vanueForm.country,
-        pincode: vanueForm.pincode,
-      },
-      contact: {
-        name: vanueForm.contactName,
-        number: vanueForm.contactNumber,
-        email: vanueForm.email,
-      },
-      description: vanueForm.description,
-      amenities,
-      images: ["jkdfhs", "dkjfh"],
-    };
-    dispatch(venueTeam(payload));
+    const payload = generatePayload(vanueForm, amenities, images);
+    dispatch(venueTeam({...payload,images:[""]}));
   };
 
-  const handleAndAddAnother = () => { saveData() }
-  const handleOnSave = () => { saveData() }
+  const handdleModelClose = () => {
+    setIsModalOpen(false);
+    setisModelOpenForUpdate(false);
+    resetForm();
+  };
+
+  const handleAndAddAnother = () => saveData();
+  const handleOnSave = () => saveData();
 
   const getAllVenue = async () => {
-    dispatch(venueList())
-  }
+    dispatch(venueList());
+  };
 
   useEffect(() => {
     if (error) {
       toast.error(error);
-      clearVenueError();
-      return
+      dispatch(clearVenueError());
+      return;
     }
 
     if (success) {
       toast.success(success);
-      getAllVenue()
-      clearVenueSuccess();
+      getAllVenue();
+      dispatch(clearVenueSuccess());
       setIsModalOpen(false);
-      setVanueForm({
-        venueName: "Naeem Akhter",
-        city: "Purnia",
-        surfaceType: "",
-        surfaceBehavior: "",
-        capacity: "",
-        floodLights: true,
-        indoorOutdoor: "",
-        pitchCount: "",
-        addressLine1: "",
-        addressLine2: "",
-        area: "",
-        state: "",
-        country: "",
-        pincode: "",
-        contactName: "",
-        contactNumber: "",
-        email: "",
-        description: "",
-      })
-      return;
+      setisModelOpenForUpdate(false);
+      resetForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error, success]);
 
   useEffect(() => {
-    getAllVenue()
+    getAllVenue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
+  // this is the fix for the "undefined fields on edit" bug: floodLights,
+  // pitchCount and indoorOutdoor were read in handleEdit but never mapped
+  // here, so they were always undefined on the row object
   const VENUES = useMemo(() => {
-    return allVenueInList.map(item => {
-      return {
-        name: item.name,
-        address: item.address.line1,
-        city: item.city,
-        state: item.address.state,
-        surface: item.surface.behavior,
-        surfaceType: item.surface.type,
-        surfaceColor: "bg-orange-100 text-orange-700",
-        capacity: item.capacity,
-        status: item.status,
-        gradient: "from-sky-300 to-sky-500",
-        id: item._id,
-        groundOwner: item.createdBy,
-        description:item.description,
-        contact:item.contact
-      }
-    })
-  }, [allVenueInList])
+    return (allVenueInList || []).map((item) => ({
+      id: item._id,
+      name: item.name,
+      address: item.address.line1,
+      city: item.city,
+      state: item.address.state,
+      surface: item.surface.behavior,
+      surfaceType: item.surface.type,
+      surfaceColor: "bg-orange-100 text-orange-700",
+      capacity: item.capacity,
+      status: item.status,
+      gradient: "from-sky-300 to-sky-500",
+      groundOwner: item.createdBy,
+      description: item.description,
+      contact: item.contact,
+      addressObj: item.address,
+      amenities: item.amenities,
+      images: item.images,
+      floodLights: item.floodLights,
+      pitchCount: item.pitchCount,
+      indoorOutdoor: item.indoorOutdoor,
+    }));
+  }, [allVenueInList]);
+
+  // stat cards and city breakdown are now derived from real data instead
+  // of hardcoded numbers that never matched what the table showed
+  const statCards = useMemo(() => {
+    const total = VENUES.length;
+    const active = VENUES.filter((v) => v.status === "Active").length;
+    const inactive = total - active;
+    const cities = new Set(VENUES.map((v) => v.city).filter(Boolean)).size;
+
+    return [
+      { icon: MapPin, label: "Total Venues", value: total, sub: "All registered venues", bg: "bg-violet-50", fg: "text-violet-500" },
+      { icon: MapPin, label: "Active Venues", value: active, sub: "Currently active", bg: "bg-emerald-50", fg: "text-emerald-500" },
+      { icon: ShieldOff, label: "Inactive Venues", value: inactive, sub: "Temporarily inactive", bg: "bg-amber-50", fg: "text-amber-500" },
+      { icon: Building2, label: "Total Cities", value: cities, sub: "Cities with venues", bg: "bg-sky-50", fg: "text-sky-500" },
+    ];
+  }, [VENUES]);
+
+  const venueSummary = useMemo(() => {
+    const total = VENUES.length || 1;
+    const active = VENUES.filter((v) => v.status === "Active").length;
+    const inactive = VENUES.length - active;
+    return [
+      { name: "Active", value: active, pct: `${((active / total) * 100).toFixed(1)}%`, color: "#22C55E" },
+      { name: "Inactive", value: inactive, pct: `${((inactive / total) * 100).toFixed(1)}%`, color: "#FBBF24" },
+    ];
+  }, [VENUES]);
+
+  const filteredVenues = useMemo(() => {
+    if (!search.trim()) return VENUES;
+    const q = search.trim().toLowerCase();
+    return VENUES.filter(
+      (v) =>
+        v.name?.toLowerCase().includes(q) ||
+        v.city?.toLowerCase().includes(q) ||
+        v.groundOwner?.toLowerCase?.().includes(q)
+    );
+  }, [VENUES, search]);
 
   return (
     <div className="h-screen bg-[#F7F7F9] overflow-y-auto no-scrollbar p-6 lg:p-8">
@@ -425,7 +417,7 @@ export default function OrgVenues() {
         <div className="min-w-0">
           {/* Stat cards */}
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {STAT_CARDS.map((c) => (
+            {statCards.map((c) => (
               <div key={c.label} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${c.bg}`}>
                   <c.icon size={18} className={c.fg} />
@@ -472,7 +464,10 @@ export default function OrgVenues() {
                 </button>
               </div>
 
-              <button className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-600 shadow-sm hover:bg-slate-50">
+              <button
+                onClick={() => setSearch("")}
+                className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+              >
                 <ListFilter size={14} />
                 Clear Filters
               </button>
@@ -494,8 +489,8 @@ export default function OrgVenues() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {VENUES.map((v) => (
-                    <tr key={v.name} className="text-slate-700 hover:bg-slate-50/60">
+                  {filteredVenues.map((v) => (
+                    <tr key={v.id} className="text-slate-700 hover:bg-slate-50/60">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <VenueThumb gradient={v.gradient} />
@@ -533,10 +528,7 @@ export default function OrgVenues() {
                           <button onClick={() => handleEdit(v)} className="rounded-lg border border-indigo-100 p-1.5 text-indigo-500 hover:bg-indigo-50">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => handleView(v)} className="rounded-lg border border-sky-100 p-1.5 text-sky-500 hover:bg-sky-50">
-                            <Eye size={14} />
-                          </button>
-                          <button onClick={() => handleDelete(v)} className="rounded-lg border border-rose-100 p-1.5 text-rose-500 hover:bg-rose-50">
+                          <button onClick={() => handleDeleteClick(v)} className="rounded-lg border border-rose-100 p-1.5 text-rose-500 hover:bg-rose-50">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -549,19 +541,13 @@ export default function OrgVenues() {
 
             {/* Pagination footer */}
             <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-
               <span className="text-sm text-slate-500">
-                Showing{" "}
-                {venueCount === 0 ? 0 : (currentPage - 1) * limit + 1}
-                {" "}to{" "}
-                {Math.min(currentPage * limit, venueCount)}
-                {" "}of {venueCount} venues
+                Showing {venueCount === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
+                {Math.min(currentPage * limit, venueCount)} of {venueCount} venues
               </span>
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-
-                  {/* Previous */}
                   <button
                     onClick={() => setCurrentPage((prev) => prev - 1)}
                     disabled={currentPage === 1}
@@ -570,21 +556,18 @@ export default function OrgVenues() {
                     <ChevronLeft size={16} />
                   </button>
 
-                  {/* Pages */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((p) => (
                     <button
                       key={p}
                       onClick={() => setCurrentPage(p)}
-                      className={`h-8 w-8 rounded-lg text-sm font-medium ${p === currentPage
-                        ? "bg-indigo-600 text-white"
-                        : "text-slate-600 hover:bg-slate-100"
-                        }`}
+                      className={`h-8 w-8 rounded-lg text-sm font-medium ${
+                        p === currentPage ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                      }`}
                     >
                       {p}
                     </button>
                   ))}
 
-                  {/* Next */}
                   <button
                     onClick={() => setCurrentPage((prev) => prev + 1)}
                     disabled={currentPage === totalPages}
@@ -608,14 +591,14 @@ export default function OrgVenues() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={VENUE_SUMMARY}
+                      data={venueSummary}
                       dataKey="value"
                       innerRadius={50}
                       outerRadius={70}
                       paddingAngle={2}
                       stroke="none"
                     >
-                      {VENUE_SUMMARY.map((entry, i) => (
+                      {venueSummary.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
@@ -623,12 +606,12 @@ export default function OrgVenues() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-slate-800">42</span>
+                  <span className="text-2xl font-bold text-slate-800">{VENUES.length}</span>
                   <span className="text-[11px] text-slate-400">Total</span>
                 </div>
               </div>
               <div className="mt-4 flex w-full flex-col gap-2">
-                {VENUE_SUMMARY.map((d) => (
+                {venueSummary.map((d) => (
                   <div key={d.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-slate-600">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
@@ -680,13 +663,12 @@ export default function OrgVenues() {
 
       <Modal
         open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          isModelOpenForUpdate(false)
-        }}
+        onClose={handdleModelClose}
         onSave={handleOnSave}
         onSaveAndAddAnother={handleAndAddAnother}
         isModelOpenForUpdate={isModelOpenForUpdate}
+        handleUpdate={handleUpdate}
+        loading={loading}
       >
         <AddNewVenue
           form={vanueForm}
@@ -702,12 +684,19 @@ export default function OrgVenues() {
 
       <ShowModel
         open={openDeleteModel}
-        onClose={() => setOpenDeleteModel(false)}
+        onClose={() => {
+          setOpenDeleteModel(false);
+          setVenueToDelete(null);
+        }}
         title={"Are you sure you want to delete this venue? This action cannot be undone."}
       >
         <DeleteComponent
-          onCancel={() => setOpenDeleteModel(false)}
-          onDelete={handleDelete}
+          onCancel={() => {
+            setOpenDeleteModel(false);
+            setVenueToDelete(null);
+          }}
+          onDelete={handleConfirmDelete}
+          loading={loading}
         />
       </ShowModel>
     </div>
