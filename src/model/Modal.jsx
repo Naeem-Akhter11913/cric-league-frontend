@@ -9,7 +9,8 @@ const Modal = ({
   islogin,
   isModelOpenForUpdate,
   handleUpdate,
-  loading
+  loading,
+  isCSV
 }) => {
   if (!open) return null;
 
@@ -52,26 +53,34 @@ const Modal = ({
               onClick={() => handleUpdate(false)}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
             >
-              {loading ? "Update...": "Update"}
+              {loading ? "Update..." : "Update"}
             </button>
-            :
-            <>
+            : isCSV ?
               <button
                 type="button"
-                onClick={() => onSaveAndAddAnother(true)}
-                className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer"
-              >
-                Save & Add Another
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onSave(false)}
+                onClick={() => onSave()}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
               >
-                Save
+                {loading ? "Uploading..." : "Upload"}
               </button>
-            </>}
+              :
+              <>
+                <button
+                  type="button"
+                  onClick={() => onSaveAndAddAnother(true)}
+                  className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer"
+                >
+                  Save & Add Another
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onSave(false)}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer"
+                >
+                  Save
+                </button>
+              </>}
         </div>}
       </div>
     </div>

@@ -14,177 +14,20 @@ import {
   Search,
   ChevronDown,
   ListFilter,
-  Pencil,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  Download,
-  Upload,
-  Map,
-  Landmark,
 } from "lucide-react";
 import Modal from "../model/Modal";
 import AddNewVenue from "../components/AddNewVenue";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { clearTeamError, clearTeamSuccess } from "../store/Slice/teamSlice";
 import { clearVenueError, clearVenueSuccess } from "../store/Slice/venueSlice";
 import { venueDelete, venueList, venueTeam, venueUpdate } from "../store/action/venue.action";
 import ShowModel from "../model/ShowModel";
 import DeleteComponent from "../components/DeleteComponent";
+import { EMPTY_VENUE_FORM, exportVenuesToCSV, generatePayload, QUICK_ACTIONS, TOP_CITIES, validateVenueForm } from "../utils/vanue.utils";
+import VenueTable from "../components/VenueTable";
+import VenueUploadCSV from "../components/VenueUploadCSV";
 
-// ---- static UI config (not derived from server data) ----
-const QUICK_ACTIONS = [
-  { icon: Plus, label: "Add New Venue" },
-  { icon: Download, label: "Import Venues" },
-  { icon: Upload, label: "Export Venues" },
-  { icon: Map, label: "Venue Map View" },
-];
 
-const TOP_CITIES = [
-  { city: "Mumbai", count: 8 },
-  { city: "Delhi", count: 6 },
-  { city: "Bangalore", count: 5 },
-  { city: "Kolkata", count: 4 },
-  { city: "Hyderabad", count: 3 },
-];
-
-// single source of truth for the (empty) venue form shape — reused on
-// open, cancel, and post-save reset instead of being retyped 3x
-const EMPTY_VENUE_FORM = {
-  venueName: "",
-  city: "",
-  surfaceType: "",
-  surfaceBehavior: "",
-  capacity: "",
-  floodLights: true,
-  indoorOutdoor: "",
-  pitchCount: "",
-  addressLine1: "",
-  addressLine2: "",
-  area: "",
-  state: "",
-  country: "",
-  pincode: "",
-  contactName: "",
-  contactNumber: "",
-  email: "",
-  description: "",
-};
-
-function StatusPill({ status }) {
-  const active = status === "Active";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-        active ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function VenueThumb({ gradient }) {
-  return (
-    <div className={`flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${gradient}`}>
-      <Landmark size={20} className="text-white/90" />
-    </div>
-  );
-}
-
-const validateVenueForm = (form, amenities, images) => {
-  const errors = {};
-
-  if (!form.venueName?.trim()) errors.venueName = "Venue name is required";
-  if (!form.city?.trim()) errors.city = "City is required";
-  if (!form.surfaceType?.trim()) errors.surfaceType = "Surface type is required";
-  if (!form.surfaceBehavior?.trim()) errors.surfaceBehavior = "Surface behavior is required";
-
-  if (!form.capacity?.toString().trim()) {
-    errors.capacity = "Capacity is required";
-  } else if (isNaN(Number(form.capacity)) || Number(form.capacity) <= 0) {
-    errors.capacity = "Capacity must be a positive number";
-  }
-
-  if (!form.indoorOutdoor?.trim()) errors.indoorOutdoor = "Indoor / Outdoor is required";
-
-  if (!form.pitchCount?.toString().trim()) {
-    errors.pitchCount = "Pitch count is required";
-  } else if (isNaN(Number(form.pitchCount)) || Number(form.pitchCount) <= 0) {
-    errors.pitchCount = "Pitch count must be a positive number";
-  }
-
-  if (!form.addressLine1?.trim()) errors.addressLine1 = "Address line 1 is required";
-  if (!form.addressLine2?.trim()) errors.addressLine2 = "Address line 2 is required";
-  if (!form.area?.trim()) errors.area = "Area / Locality is required";
-  if (!form.state?.trim()) errors.state = "State is required";
-  if (!form.country?.trim()) errors.country = "Country is required";
-
-  if (!form.pincode?.trim()) {
-    errors.pincode = "Pincode is required";
-  } else if (!/^\d{4,10}$/.test(form.pincode.trim())) {
-    errors.pincode = "Enter a valid pincode";
-  }
-
-  if (!form.contactName?.trim()) errors.contactName = "Contact name is required";
-
-  if (!form.contactNumber?.trim()) {
-    errors.contactNumber = "Contact number is required";
-  } else if (!/^\+?\d{7,15}$/.test(form.contactNumber.trim())) {
-    errors.contactNumber = "Enter a valid contact number";
-  }
-
-  if (!form.email?.trim()) {
-    errors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    errors.email = "Enter a valid email address";
-  }
-
-  if (!form.description?.trim()) errors.description = "Description is required";
-
-  if (!amenities || amenities.length === 0) {
-    errors.amenities = "Add at least one amenity";
-  }
-
-  if (!images || images.length === 0) {
-    errors.images = "Add at least one image";
-  }
-
-  return errors;
-};
-
-// NOTE: this used to always send the hardcoded images ["jkdfhs","dkjfh"]
-// regardless of what the user uploaded — now takes images as a real param.
-const generatePayload = (venueForm, amenities, images) => ({
-  name: venueForm.venueName,
-  city: venueForm.city,
-  surface: {
-    type: venueForm.surfaceType,
-    behavior: venueForm.surfaceBehavior,
-  },
-  capacity: Number(venueForm.capacity),
-  floodLights: venueForm.floodLights,
-  indoorOutdoor: venueForm.indoorOutdoor,
-  pitchCount: Number(venueForm.pitchCount),
-  address: {
-    line1: venueForm.addressLine1,
-    line2: venueForm.addressLine2,
-    area: venueForm.area,
-    state: venueForm.state,
-    country: venueForm.country,
-    pincode: Number(venueForm.pincode),
-  },
-  contact: {
-    name: venueForm.contactName,
-    number: Number(venueForm.contactNumber),
-    email: venueForm.email,
-  },
-  description: venueForm.description,
-  amenities,
-  images,
-});
 
 export default function OrgVenues() {
   const dispatch = useAppDispatch();
@@ -213,6 +56,7 @@ export default function OrgVenues() {
   const [limit] = useState(5);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [isModelOpenForUpdate, setisModelOpenForUpdate] = useState(false);
+  const [isModelOpenForCSV, setModelOpenForCSV] = useState(false);
 
   // was missing before: without tracking *which* venue is being edited/
   // deleted, update had no venueId to send and delete had nothing to act on
@@ -291,7 +135,7 @@ export default function OrgVenues() {
       return;
     }
     const payload = generatePayload(vanueForm, amenities, images);
-    dispatch(venueTeam({...payload,images:[""]}));
+    dispatch(venueTeam({ ...payload, images: [""] }));
   };
 
   const handdleModelClose = () => {
@@ -358,8 +202,8 @@ export default function OrgVenues() {
     }));
   }, [allVenueInList]);
 
-  // stat cards and city breakdown are now derived from real data instead
-  // of hardcoded numbers that never matched what the table showed
+
+
   const statCards = useMemo(() => {
     const total = VENUES.length;
     const active = VENUES.filter((v) => v.status === "Active").length;
@@ -474,111 +318,16 @@ export default function OrgVenues() {
             </div>
           </div>
 
-          {/* Venues table */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-xs text-slate-400">
-                    <th className="px-5 py-3 font-medium">Venue</th>
-                    <th className="px-5 py-3 font-medium">City</th>
-                    <th className="px-5 py-3 font-medium">Surface Type</th>
-                    <th className="px-5 py-3 font-medium">Capacity</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredVenues.map((v) => (
-                    <tr key={v.id} className="text-slate-700 hover:bg-slate-50/60">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <VenueThumb gradient={v.gradient} />
-                          <div>
-                            <p className="font-semibold text-slate-800">{v.name}</p>
-                            <p className="flex items-center gap-1 text-xs text-slate-400">
-                              <MapPin size={11} className="text-orange-400" />
-                              {v.address}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-slate-700">{v.city}</p>
-                        <p className="text-xs text-slate-400">{v.state}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${v.surfaceColor}`}>
-                          {v.surface}
-                        </span>
-                        <p className="mt-1 text-xs text-slate-400">{v.surfaceType}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-slate-700">
-                          <Users size={13} className="text-slate-400" />
-                          {v.capacity}
-                        </div>
-                        <p className="text-xs text-slate-400">Spectators</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusPill status={v.status} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleEdit(v)} className="rounded-lg border border-indigo-100 p-1.5 text-indigo-500 hover:bg-indigo-50">
-                            <Pencil size={14} />
-                          </button>
-                          <button onClick={() => handleDeleteClick(v)} className="rounded-lg border border-rose-100 p-1.5 text-rose-500 hover:bg-rose-50">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination footer */}
-            <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-sm text-slate-500">
-                Showing {venueCount === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
-                {Math.min(currentPage * limit, venueCount)} of {venueCount} venues
-              </span>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setCurrentPage((prev) => prev - 1)}
-                    disabled={currentPage === 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-
-                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`h-8 w-8 rounded-lg text-sm font-medium ${
-                        p === currentPage ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() => setCurrentPage((prev) => prev + 1)}
-                    disabled={currentPage === totalPages}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <VenueTable
+            currentPage={currentPage}
+            filteredVenues={filteredVenues}
+            handleEdit={handleEdit}
+            venueCount={venueCount}
+            limit={limit}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            handleDeleteClick={handleDeleteClick}
+          />
         </div>
 
         {/* Right column */}
@@ -633,7 +382,10 @@ export default function OrgVenues() {
               {QUICK_ACTIONS.map((a) => (
                 <button
                   key={a.label}
-                  onClick={a.label === "Add New Venue" ? () => setIsModalOpen(true) : undefined}
+                  onClick={
+                    a.label === "Add New Venue" ?
+                      () => setIsModalOpen(true) : a.label === "Export Venues" ?
+                        () => exportVenuesToCSV(filteredVenues) : () => setModelOpenForCSV(true)}
                   className="flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-left text-sm font-medium text-indigo-600 hover:bg-indigo-50"
                 >
                   <a.icon size={16} />
@@ -660,6 +412,16 @@ export default function OrgVenues() {
           </div>
         </div>
       </div>
+      {/* //isModelOpenForCSV, setModelOpenForCSV */}
+
+      <Modal
+        open={isModelOpenForCSV}
+        onClose={() => setModelOpenForCSV(false)}
+        onSave={() =>{console.log("Saving CSV")}}
+        loading={loading}isCSV={true}
+      >
+        <VenueUploadCSV />
+      </Modal>
 
       <Modal
         open={isModalOpen}

@@ -17,6 +17,8 @@ import {
     ChevronRight,
     Shield,
 } from 'lucide-react'
+import Modal from '../model/Modal';
+import CreateTournament from '../components/CreateTournament';
 
 const tabs = [
     { label: "All Tournaments", icon: SlidersHorizontal },
@@ -114,12 +116,14 @@ const OrgTournaments = () => {
     const [sortOpen, setSortOpen] = useState(false);
     const [sortBy, setSortBy] = useState("Newest First");
     const [openMenu, setOpenMenu] = useState(null);
+    const [isModelOpenTournament, setIsModelOpenTournament] = useState(false);
     const [perPage, setPerPage] = useState(10);
     const [page, setPage] = useState(1);
 
     const sortOptions = ["Newest First", "Oldest First", "Name A-Z", "Prize Pool"];
 
     return (
+        <>
         <div className="min-h-screen bg-[#F7F7F9] p-4 sm:p-6 overflow-y-auto no-scrollbar">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-6">
@@ -151,7 +155,9 @@ const OrgTournaments = () => {
                         );
                     })}
                 </div>
-                <button className="flex items-center justify-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shrink-0">
+                <button onClick={() =>{
+                    setIsModelOpenTournament(true)
+                }} className="flex items-center justify-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shrink-0">
                     <Plus size={16} />
                     Create Tournament
                 </button>
@@ -391,6 +397,13 @@ const OrgTournaments = () => {
                 </div>
             </div>
         </div>
+        <Modal
+        open={isModelOpenTournament}
+        onClose={() => setIsModelOpenTournament(false)}
+      >
+        <CreateTournament />
+      </Modal>
+        </>
     )
 
 }
