@@ -28,6 +28,19 @@ export const venueList = createAsyncThunk(
     }
   }
 );
+export const allVenueList = createAsyncThunk(
+  'venue/all-list',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const data = await venueAPI.listAllVenueRequest(payload);
+      return data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || 'Failed to create venue'
+      );
+    }
+  }
+);
 
 export const venueUpdate = createAsyncThunk(
   'venue/update',

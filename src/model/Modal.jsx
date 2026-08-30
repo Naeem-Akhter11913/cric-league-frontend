@@ -65,13 +65,13 @@ const Modal = ({
               </button>
               :
               <>
-                <button
+                {/* <button
                   type="button"
                   onClick={() => onSaveAndAddAnother(true)}
                   className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer"
                 >
                   Save & Add Another
-                </button>
+                </button> */}
 
                 <button
                   type="button"

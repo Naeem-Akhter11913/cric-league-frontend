@@ -177,11 +177,13 @@ export default function OrgVenues() {
   // this is the fix for the "undefined fields on edit" bug: floodLights,
   // pitchCount and indoorOutdoor were read in handleEdit but never mapped
   // here, so they were always undefined on the row object
+  console.log(allVenueInList)
   const VENUES = useMemo(() => {
+    console.log(allVenueInList)
     return (allVenueInList || []).map((item) => ({
       id: item._id,
       name: item.name,
-      address: item.address.line1,
+      address: item.address?.line1,
       city: item.city,
       state: item.address.state,
       surface: item.surface.behavior,

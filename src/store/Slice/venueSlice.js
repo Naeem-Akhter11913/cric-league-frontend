@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { venueDelete, venueList, venueTeam, venueUpdate } from "../action/venue.action";
+import { allVenueList, venueDelete, venueList, venueTeam, venueUpdate } from "../action/venue.action";
 
 
 
@@ -7,8 +7,9 @@ import { venueDelete, venueList, venueTeam, venueUpdate } from "../action/venue.
 const initialState = {
     venue: null,
     list: [],
-    venueCount:0,
-    totalPages:0,
+    venueAllList:[],
+    venueCount: 0,
+    totalPages: 0,
     selectedVenue: null,
     // teamPlayers: [],
     loading: false,
@@ -67,27 +68,38 @@ const teamSlice = createSlice({
             .addCase(venueList.rejected, (state) => {
                 state.loading = false;
             })
+            .addCase(allVenueList.pending, state => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(allVenueList.fulfilled, (state, action) => {
+                state.loading = false;
+                state.venueAllList = action.payload.data;
+            })
+            .addCase(allVenueList.rejected, (state) => {
+                state.loading = false;
+            })
 
             // Update Venue
-            .addCase(venueUpdate.pending, state =>{
+            .addCase(venueUpdate.pending, state => {
                 state.loading = true;
             })
-            .addCase(venueUpdate.fulfilled, (state,action) =>{
+            .addCase(venueUpdate.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = action.payload.message
             })
-            .addCase(venueUpdate.rejected, state =>{
+            .addCase(venueUpdate.rejected, state => {
                 state.loading = false;
             })
             // Deleting Venue
-            .addCase(venueDelete.pending, state =>{
+            .addCase(venueDelete.pending, state => {
                 state.loading = true;
             })
-            .addCase(venueDelete.fulfilled, (state,action) =>{
+            .addCase(venueDelete.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = action.payload.message
             })
-            .addCase(venueDelete.rejected, state =>{
+            .addCase(venueDelete.rejected, state => {
                 state.loading = false;
             })
     },
