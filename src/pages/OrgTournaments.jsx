@@ -10,11 +10,9 @@ import {
     SlidersHorizontal,
     ChevronDown,
     Plus,
-    MapPin,
     Eye,
     Pencil,
     Trash2,
-    MoreVertical,
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react'
@@ -53,14 +51,14 @@ const STATUS_META = {
     draft: {
         label: "Draft",
         tab: "Upcoming",
-        value:'draft',
+        value: 'draft',
         color: "#4F46E5",
         bg: "#EEF2FF"
     },
     upcoming: {
         label: "Upcoming",
         tab: "Upcoming",
-        value:'draft',
+        value: 'draft',
         color: "#4F46E5",
         bg: "#EEF2FF"
     },
@@ -73,14 +71,14 @@ const STATUS_META = {
     },
     ongoing: {
         label: "Ongoing",
-        value:'ongoing',
+        value: 'ongoing',
         tab: "Ongoing",
         color: "#16A34A",
         bg: "#DCFCE7"
     },
     completed: {
         label: "Completed",
-        value:'completed',
+        value: 'completed',
         tab: "Completed",
         color: "#4B5563",
         bg: "#F3F4F6"
@@ -182,7 +180,6 @@ const OrgTournaments = () => {
     const [listSearch, setListSearch] = useState("");
     const [sortOpen, setSortOpen] = useState(false);
     const [sortBy, setSortBy] = useState("Newest First");
-    const [openMenu, setOpenMenu] = useState(null);
     const [isModelOpenTournament, setIsModelOpenTournament] = useState(false);
     const [modalMode, setModalMode] = useState("create"); // 'create' | 'edit'
     const [editingId, setEditingId] = useState(null);
@@ -224,7 +221,6 @@ const OrgTournaments = () => {
     // Normalize raw API tournaments into everything the UI needs
     const mappedTournaments = useMemo(() => {
         return (allTournamentsList || []).map((t, i) => {
-            // console.log(STATUS_META[t.status])
             const statusMeta = STATUS_META[t.status] || STATUS_META.draft;
             return {
                 ...t,
@@ -302,8 +298,6 @@ const OrgTournaments = () => {
         ];
     }, [mappedTournaments, tournamentCount]);
 
-    const featuredTournaments = filteredTournaments.slice(0, 4);
-
     const openCreateModal = () => {
         setModalMode("create");
         setEditingId(null);
@@ -330,16 +324,11 @@ const OrgTournaments = () => {
         });
         setTournamentLogo(row.logo || null);
         setIsModelOpenTournament(true);
-        setOpenMenu(null);
     };
 
     const handleDelete = (row) => {
-        setOpenMenu(null);
         setTournamentToDelete(row);
         setOpenDeleteModel(true)
-        // const confirmed = window.confirm(`Delete "${row.name}"? This can't be undone.`);
-        // if (!confirmed) return;
-        // dispatch(deleteTournamentById(row._id));
     };
 
     const handleConfirmDelete = () => {
@@ -372,35 +361,16 @@ const OrgTournaments = () => {
         <>
             <div className="min-h-screen bg-[#F7F7F9] p-4 sm:p-6 overflow-y-auto no-scrollbar">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-6">
+               
+
+                {/* Tabs + Create button */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-1">
+ <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Tournaments</h1>
                         <p className="text-sm text-gray-500 mt-1">Manage and organize tournaments seamlessly</p>
                     </div>
                 </div>
-
-                {/* Tabs + Create button */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
-                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto no-scrollbar w-full lg:w-auto">
-                        {tabs.map((t) => {
-                            const isActive = activeTab === t.label;
-                            return (
-                                <button
-                                    key={t.label}
-                                    onClick={() => setActiveTab(t.label)}
-                                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${isActive ? "bg-[#EEF2FF] text-[#4F46E5]" : "text-gray-500 hover:bg-gray-50"
-                                        }`}
-                                >
-                                    {t.icon === "dot" ? (
-                                        <span className="w-2 h-2 rounded-full" style={{ background: t.dotColor }}></span>
-                                    ) : (
-                                        <t.icon size={15} />
-                                    )}
-                                    {t.label}
-                                </button>
-                            );
-                        })}
-                    </div>
                     <button
                         onClick={openCreateModal}
                         className="flex items-center justify-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shrink-0"
@@ -411,7 +381,7 @@ const OrgTournaments = () => {
                 </div>
 
                 {/* Stat cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
                     {stats.map((s, i) => (
                         <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3 hover:shadow-sm transition-shadow">
                             <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: s.bg }}>
@@ -426,127 +396,70 @@ const OrgTournaments = () => {
                     ))}
                 </div>
 
-                {/* All Tournaments header row */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">All Tournaments</h2>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="relative">
-                            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                value={listSearch}
-                                onChange={(e) => setListSearch(e.target.value)}
-                                type="text"
-                                placeholder="Search tournaments..."
-                                className="h-10 pl-9 pr-3 w-48 sm:w-56 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:border-[#4F46E5] transition-all"
-                            />
-                        </div>
-                        <div className="relative">
+                {/* Tournament list — title, search and sort now share one header row
+                    with the table itself, instead of a duplicate "All Tournaments" /
+                    "Tournament List" title pair in two separate wrapping blocks */}
+                <div className="mb-3 flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto no-scrollbar w-full lg:w-auto">
+                    {tabs.map((t) => {
+                        const isActive = activeTab === t.label;
+                        return (
                             <button
-                                onClick={() => setSortOpen(!sortOpen)}
-                                className="flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                key={t.label}
+                                onClick={() => setActiveTab(t.label)}
+                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${isActive ? "bg-[#EEF2FF] text-[#4F46E5]" : "text-gray-500 hover:bg-gray-50"
+                                    }`}
                             >
-                                Sort By
-                                <ChevronDown size={15} className={`transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+                                {t.icon === "dot" ? (
+                                    <span className="w-2 h-2 rounded-full" style={{ background: t.dotColor }}></span>
+                                ) : (
+                                    <t.icon size={15} />
+                                )}
+                                {t.label}
                             </button>
-                            {sortOpen && (
-                                <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
-                                    {sortOptions.map((opt) => (
-                                        <button
-                                            key={opt}
-                                            onClick={() => { setSortBy(opt); setSortOpen(false); }}
-                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${sortBy === opt ? "text-[#4F46E5] font-medium" : "text-gray-600"
-                                                }`}
-                                        >
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                        );
+                    })}
                 </div>
-
-                {/* Featured tournament cards */}
-                {featuredTournaments.length === 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-500 mb-8">
-                        No tournaments match this view yet.
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                        {featuredTournaments.map((t) => (
-                            <div key={t._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-                                <div className="relative h-32 bg-gradient-to-br from-gray-100 to-gray-200">
-                                    <span
-                                        className="absolute top-2.5 left-2.5 text-[10px] font-bold text-white px-2 py-1 rounded"
-                                        style={{ background: t.statusColor }}
-                                    >
-                                        {t.statusLabel.toUpperCase()}
-                                    </span>
-                                    <div className="absolute -bottom-5 left-4">
-                                        <Crest crest={t.crest} />
-                                    </div>
-                                </div>
-                                <div className="p-4 pt-7 flex flex-col flex-1">
-                                    <h3 className="font-semibold text-gray-900 mb-1.5 truncate">{t.name}</h3>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                                        <CalendarDays size={13} />
-                                        {t.dates}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3 truncate">
-                                        <MapPin size={13} />
-                                        {t.venueNames}
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-center border-y border-gray-100 py-3 mb-3">
-                                        <div>
-                                            <div className="text-sm font-bold text-gray-900">{t.teams}</div>
-                                            <div className="text-[10px] text-gray-400">TEAMS</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-gray-900">{t.matches}</div>
-                                            <div className="text-[10px] text-gray-400">MATCHES</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-gray-900">{t.prize}</div>
-                                            <div className="text-[10px] text-gray-400">WINNER PRIZE</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-2 mt-auto">
-                                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: t.statusColor }}>
-                                            {t.statusLabel}
-                                        </span>
-                                        <div className="flex items-center gap-1.5">
-                                            <button
-                                                onClick={() => openEditModal(t)}
-                                                className="text-xs font-medium text-[#4F46E5] border border-[#4F46E5]/30 rounded-lg px-3 py-1.5 hover:bg-[#EEF2FF] transition-colors"
-                                            >
-                                                Edit
-                                            </button>
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setOpenMenu(openMenu === t._id ? null : t._id)}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 transition-colors"
-                                                >
-                                                    <MoreVertical size={15} />
-                                                </button>
-                                                {openMenu === t._id && (
-                                                    <div className="absolute right-0 bottom-9 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
-                                                        <button onClick={() => openEditModal(t)} className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">Edit</button>
-                                                        <button onClick={() => handleDelete(t)} className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-gray-50">Delete</button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tournament list table */}
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-10">
-                    <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">Tournament List</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900">All Tournaments</h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="relative">
+                                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    value={listSearch}
+                                    onChange={(e) => { setListSearch(e.target.value); setPage(1); }}
+                                    type="text"
+                                    placeholder="Search tournaments..."
+                                    className="h-10 pl-9 pr-3 w-48 sm:w-56 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:border-[#4F46E5] transition-all"
+                                />
+                            </div>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setSortOpen(!sortOpen)}
+                                    className="flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                >
+                                    Sort By
+                                    <ChevronDown size={15} className={`transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+                                </button>
+                                {sortOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setSortOpen(false)} />
+                                        <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-40 py-1">
+                                            {sortOptions.map((opt) => (
+                                                <button
+                                                    key={opt}
+                                                    onClick={() => { setSortBy(opt); setSortOpen(false); }}
+                                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${sortBy === opt ? "text-[#4F46E5] font-medium" : "text-gray-600"
+                                                        }`}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm min-w-[1080px]">

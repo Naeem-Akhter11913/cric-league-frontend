@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard,
     Trophy,
@@ -34,10 +34,10 @@ const CricDashboard = () => {
     const [activeIndex, setActiveIndex] = useState(0);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const locaiton = useLocation();
     const calledRef = useRef(false);
 
 
-    // console.log(user)
     const sidebarItems = [
         {
             label: "Dashboard",
@@ -179,7 +179,7 @@ const CricDashboard = () => {
 
                     <div className="flex-1 overflow-y-auto py-2 px-2 no-scrollbar">
                         {sidebarItems.map((item, i) => {
-                            const isActive = i === activeIndex;
+                            const isActive = item.to.endsWith(locaiton.pathname);
                             return (
                                 <button
                                     key={i}
