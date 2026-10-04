@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { createTeam, teamList, teamGetById, updateTeam, addPlayerToTeam, listTeamPlayers } from '../action/teamActions';
+import { createTeam, teamList, teamGetById, updateTeam, addPlayerToTeam, listTeamPlayers, deleteTeam, fetchTeamStats } from '../action/teamActions';
 
 
 const initialState = {
@@ -9,7 +9,9 @@ const initialState = {
     teamPlayers: [],
     loading: false,
     error: null,
-    success: null
+    success: null,
+    stats: null,
+    statsLoading: false,
 };
 
 const teamSlice = createSlice({
@@ -113,7 +115,25 @@ const teamSlice = createSlice({
             .addCase(listTeamPlayers.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
-            });
+            })
+
+
+            .addCase(deleteTeam.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(deleteTeam.fulfilled, (state, action) => {
+                state.loading = false;
+                state.success = action.payload?.message || 'Team deleted';
+            })
+            .addCase(deleteTeam.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || 'Failed to delete team';
+            })
+
+            .addCase(fetchTeamStats.pending, (state) => { state.statsLoading = true; })
+            .addCase(fetchTeamStats.fulfilled, (state, action) => {
+                state.statsLoading = false;
+                state.stats = action.payload;
+            })
+            .addCase(fetchTeamStats.rejected, (state) => { state.statsLoading = false; })
     },
 });
 

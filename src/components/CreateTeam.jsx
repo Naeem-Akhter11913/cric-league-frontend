@@ -1,3 +1,4 @@
+
 // import React, { useEffect, useMemo, useReducer, useState } from "react";
 // import {
 //   Search,
@@ -107,6 +108,17 @@
 //       };
 //     case "SET_MENU":
 //       return { ...state, openMenuFor: action.id };
+//     // Loads an existing team's roster in one shot — used when opening the
+//     // modal in edit mode, instead of dispatching ADD_PLAYER/MAKE_CAPTAIN etc.
+//     // one at a time.
+//     case "HYDRATE":
+//       return {
+//         ...state,
+//         selectedIds: action.selectedIds || [],
+//         captainId: action.captainId || null,
+//         viceCaptainId: action.viceCaptainId || null,
+//         openMenuFor: null,
+//       };
 //     case "CLEAR_TEAM":
 //       return initialRosterState;
 //     default:
@@ -119,8 +131,14 @@
 //   submitTeam,
 //   players,
 //   managers = [],
-//   loading
+//   loading,
+//   // Pass an existing team object to open the form in edit mode, pre-filled
+//   // with that team's roster/captain/vice-captain/name/logo. Pass null (or
+//   // omit) for create mode.
+//   initialTeam = null,
 // }) {
+//   const isEdit = !!initialTeam;
+
 //   // Roster/selection state — was: selectedIds, captainId, viceCaptainId, openMenuFor
 //   const [roster, dispatchRoster] = useReducer(rosterReducer, initialRosterState);
 //   const { selectedIds, captainId, viceCaptainId, openMenuFor } = roster;
@@ -138,10 +156,34 @@
 //     logoFile: null,
 //     logoPreview: null,
 //   });
+//   const [selectedIdsss, setSelectedIds] = useState([]);
 //   const { teamName, logoFile, logoPreview } = teamDetails;
 //   const setTeamName = (value) => setTeamDetails((d) => ({ ...d, teamName: value }));
 
 //   const dispatch = useAppDispatch()
+
+//   // Edit-mode hydration: when an initialTeam is supplied (modal opened for
+//   // editing), load its players/captain/vice-captain/name/logo into local
+//   // state once. Re-runs if the user opens a different team's edit modal.
+//   useEffect(() => {
+//     if (!initialTeam) return;
+
+//     const ids = (initialTeam.players || []).map((p) => p._id);
+//     dispatchRoster({
+//       type: "HYDRATE",
+//       selectedIds: ids,
+//       captainId: initialTeam.captain || null,
+//       viceCaptainId: initialTeam.viceCaptain || null,
+//     });
+
+//     setTeamDetails({
+//       teamName: initialTeam.name || "",
+//       logoFile: null,
+//       // logoUrl from the API is a string URL, not a File — show it directly
+//       // as the preview; a new upload will replace it.
+//       logoPreview: initialTeam.logoUrl || null,
+//     });
+//   }, [initialTeam]);
 
 //   const handleLogoChange = (e) => {
 //     const file = e.target.files?.[0] || null;
@@ -159,37 +201,64 @@
 //     });
 //   };
 
-//   const PLAYER_POOL = useMemo(() => {
-//     return players
-//       // .filter(ite => itm.status === "active" && itm.availability === "Available")
-//       .map(item => {
-//         const { _id, userId, battingStyle, bowlingStyle, playerType } = item;
-//         // Batter Bowler All-Rounder
-//         const { name = "Default Name", email, phone } = userId || {};
-//         const type = playerType === "bowler" ? bowlingStyle : battingStyle
+//   // const PLAYER_POOL = useMemo(() => {
+//   //   return players
+//   //     // .filter(ite => itm.status === "active" && itm.availability === "Available")
+//   //     .map(item => {
+//   //       const { _id, userId, battingStyle, bowlingStyle, playerType } = item;
+//   //       // Batter Bowler All-Rounder
+//   //       const { name = "Default Name", email, phone } = userId || {};
+//   //       const type = playerType === "bowler" ? bowlingStyle : battingStyle
 
-//         return { id: _id, name, type, role: toCapitalize(playerType) }
-//       })
-//   }, [players]);
+//   //       return { id: _id, name, type, role: toCapitalize(playerType) }
+//   //     })
+//   // }, [players]);
+
+//   // const roleCounts = useMemo(() => {
+//   //   const counts = { Batter: 0, Bowler: 0, "All-Rounder": 0 };
+//   //   PLAYER_POOL.forEach((p) => counts[p.role]++);
+//   //   return counts;
+//   // }, []);
+
+//   const toPoolItem = (item) => {
+//     const { _id, userId, battingStyle, bowlingStyle, playerType } = item;
+//     const { name = "Default Name" } = userId || {};
+//     return {
+//       id: _id,
+//       name,
+//       type: playerType === "bowler" ? bowlingStyle : battingStyle,
+//       role: toCapitalize(playerType),
+//     };
+//   };
+
+//   const PLAYER_POOL = useMemo(() => {
+//     const map = new Map();
+//     (players || []).forEach((p) => map.set(p._id, toPoolItem(p)));
+//     // edit mode: the team's own players must always resolve, even if they
+//     // aren't in the first page of `players`
+//     (initialTeam?.players || []).forEach((p) => {
+//       if (typeof p === "object" && !map.has(p._id)) map.set(p._id, toPoolItem(p));
+//     });
+//     return [...map.values()];
+//   }, [players, initialTeam]);
+
+//   const PLAYERS_BY_ID = useMemo(
+//     () => Object.fromEntries(PLAYER_POOL.map((p) => [p.id, p])),
+//     [PLAYER_POOL]
+//   );
 
 //   const roleCounts = useMemo(() => {
 //     const counts = { Batter: 0, Bowler: 0, "All-Rounder": 0 };
 //     PLAYER_POOL.forEach((p) => counts[p.role]++);
 //     return counts;
-//   }, []);
+//   }, [PLAYER_POOL]);
 
-//   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-//   const isFull = selectedIds.length >= MAX_TEAM_SIZE;
-//   const isTeamComplete = selectedIds.length >= 11;
-
-//   const filteredAvailable = useMemo(() => {
-//     return PLAYER_POOL.filter(
+//   const filteredAvailable = useMemo(
+//     () => PLAYER_POOL.filter(
 //       (p) => p.role === activeTab && p.name.toLowerCase().includes(search.trim().toLowerCase())
-//     );
-//   }, [activeTab, search]);
-
-
-//   const PLAYERS_BY_ID = Object.fromEntries(PLAYER_POOL.map((p) => [p.id, p]));
+//     ),
+//     [PLAYER_POOL, activeTab, search]
+//   );
 
 //   const selectedByRole = useMemo(() => {
 //     const grouped = { Batter: [], Bowler: [], "All-Rounder": [] };
@@ -198,16 +267,38 @@
 //       if (player) grouped[player.role].push(player);
 //     });
 //     return grouped;
-//   }, [selectedIds]);
+//   }, [selectedIds, PLAYERS_BY_ID]);
 
-//   const addPlayer = (id) => {
-//     if (isFull || selectedSet.has(id)) return;
-//     dispatchRoster({ type: "ADD_PLAYER", id });
-//   };
+//   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+//   const isFull = selectedIds.length >= MAX_TEAM_SIZE;
+//   const isTeamComplete = selectedIds.length >= 11;
 
-//   const removePlayer = (id) => {
-//     dispatchRoster({ type: "REMOVE_PLAYER", id });
-//   };
+//   // const filteredAvailable = useMemo(() => {
+//   //   return PLAYER_POOL.filter(
+//   //     (p) => p.role === activeTab && p.name.toLowerCase().includes(search.trim().toLowerCase())
+//   //   );
+//   // }, [activeTab, search]);
+
+
+//   // const PLAYERS_BY_ID = Object.fromEntries(PLAYER_POOL.map((p) => [p.id, p]));
+
+//   // const selectedByRole = useMemo(() => {
+//   //   const grouped = { Batter: [], Bowler: [], "All-Rounder": [] };
+//   //   selectedIds.forEach((id) => {
+//   //     const player = PLAYERS_BY_ID[id];
+//   //     if (player) grouped[player.role].push(player);
+//   //   });
+//   //   return grouped;
+//   // }, [selectedIds]);
+
+//   // const addPlayer = (id) => {
+//   //   if (isFull || selectedSet.has(id)) return;
+//   //   dispatchRoster({ type: "ADD_PLAYER", id });
+//   // };
+
+//   // const removePlayer = (id) => {
+//   //   dispatchRoster({ type: "REMOVE_PLAYER", id });
+//   // };
 
 //   const makeCaptain = (id) => {
 //     dispatchRoster({ type: "MAKE_CAPTAIN", id });
@@ -225,24 +316,64 @@
 //     dispatchRoster({ type: "SET_MENU", id });
 //   };
 
+//   // const clearTeam = () => {
+//   //   dispatchRoster({ type: "CLEAR_TEAM" });
+//   //   setFilters(pre => ({ ...pre, activeTab: "Batter" }))
+//   //   setTeamDetails({ teamName: "", logoFile: null, logoPreview: null });
+//   // };
+
+//   // const canConfirm = isTeamComplete && captainId && viceCaptainId && captainId !== viceCaptainId;
+
+//   // const handleConfirm = () => {
+//   //   if (!canConfirm) return;
+
+//   //   const payload = {
+//   //     // Include the team id when editing so the parent knows which record
+//   //     // to update instead of creating a new one.
+//   //     ...(isEdit && { _id: initialTeam._id }),
+//   //     name: teamName,
+//   //     // Keep the existing logoUrl if the user didn't pick a new file while
+//   //     // editing; otherwise send the newly picked File for upload.
+//   //     logoUrl: logoFile || (isEdit ? initialTeam.logoUrl : null),
+//   //     captain: captainId,
+//   //     viceCaptain: viceCaptainId,
+//   //     players: selectedIds,
+//   //   }
+//   //   submitTeam(payload, isEdit);
+//   // };
+
+//   useEffect(() => {
+//     if (!initialTeam) return;
+//     setSelectedIds((initialTeam.players || []).map((p) => (typeof p === "string" ? p : p._id)));
+//     setTeamDetails({
+//       teamName: initialTeam.name || "",
+//       logoFile: null,
+//       logoPreview: initialTeam.logoUrl || null,
+//     });
+//   }, [initialTeam]);
+
+//   const addPlayer = (id) => {
+//     if (isFull || selectedSet.has(id)) return;
+//     setSelectedIds((prev) => [...prev, id]);
+//   };
+//   const removePlayer = (id) => setSelectedIds((prev) => prev.filter((x) => x !== id));
+
 //   const clearTeam = () => {
-//     dispatchRoster({ type: "CLEAR_TEAM" });
-//     setFilters(pre => ({ ...pre, activeTab: "Batter" }))
+//     setSelectedIds([]);
+//     setFilters((f) => ({ ...f, activeTab: "Batter" }));
+//     setTeamDetails({ teamName: "", logoFile: null, logoPreview: null });
 //   };
 
-//   const canConfirm = isTeamComplete && captainId && viceCaptainId && captainId !== viceCaptainId;
+//   const canConfirm = isTeamComplete && teamName.trim().length > 0;
 
 //   const handleConfirm = () => {
 //     if (!canConfirm) return;
-
-//     const payload = {
-//       name: teamName,
-//       logoUrl: logoFile,
-//       captain: captainId,
-//       viceCaptain: viceCaptainId,
+//     submitTeam({
+//       ...(isEdit && { _id: initialTeam._id }),
+//       name: teamName.trim(),
+//       logoUrl: logoFile || (isEdit ? initialTeam.logoUrl : null),
 //       players: selectedIds,
-//     }
-//     submitTeam(payload)
+//     }, isEdit);
 //   };
 
 //   useEffect(() => {
@@ -378,7 +509,7 @@
 //                     <div className="divide-y divide-slate-50">
 //                       {players.map((p) => {
 //                         const order = selectedIds.indexOf(p.id) + 1;
-//                         const isCaptain = captainId === p.id;
+//                         // const isCaptain = captainId === p.id;
 //                         const isViceCaptain = viceCaptainId === p.id;
 //                         return (
 //                           <div key={p.id} className="flex items-center gap-3 py-2.5">
@@ -393,7 +524,7 @@
 
 //                             {/* Role badge / captain-vc menu */}
 //                             <div className="relative">
-//                               <button
+//                               {/* <button
 //                                 onClick={() => setOpenMenuFor(openMenuFor === p.id ? null : p.id)}
 //                                 className={`flex h-7 min-w-[28px] items-center justify-center rounded-md px-2 text-xs font-bold ${isCaptain
 //                                   ? "bg-amber-400 text-white"
@@ -403,7 +534,7 @@
 //                                   }`}
 //                               >
 //                                 {isCaptain ? "C" : isViceCaptain ? "VC" : order}
-//                               </button>
+//                               </button> */}
 
 //                               {openMenuFor === p.id && (
 //                                 <>
@@ -470,7 +601,9 @@
 //         {/* be cleared after being added.                                   */}
 //         {/* -------------------------------------------------------------- */}
 //         <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-//           <h2 className="mb-4 text-lg font-bold text-slate-900">Team Details</h2>
+//           <h2 className="mb-4 text-lg font-bold text-slate-900">
+//             {isEdit ? "Edit Team Details" : "Team Details"}
+//           </h2>
 
 //           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 //             {/* Name */}
@@ -542,7 +675,9 @@
 //               className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
 //             >
 //               <Check size={15} />
-//               {loading ? "Team Saving.." : "Confirm Team"}
+//               {loading
+//                 ? isEdit ? "Updating Team.." : "Team Saving.."
+//                 : isEdit ? "Update Team" : "Confirm Team"}
 //             </button>
 //           </div>
 //         </div>
@@ -553,7 +688,7 @@
 // }
 
 
-import React, { useEffect, useMemo, useReducer, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -568,18 +703,16 @@ import {
   Repeat,
   Upload,
 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 const ROLES = [
-  { key: "Batter", label: "Batter", icon: Sword, color: "blue" },
-  { key: "Bowler", label: "Bowler", icon: CircleDot, color: "emerald" },
-  { key: "All-Rounder", label: "All-Rounder", icon: Repeat, color: "violet" },
+  { key: "Batter", label: "Batter", icon: Sword },
+  { key: "Bowler", label: "Bowler", icon: CircleDot },
+  { key: "All-Rounder", label: "All-Rounder", icon: Repeat },
 ];
 
 const ROLE_STYLES = {
   Batter: {
     tabActive: "border-blue-400 bg-blue-50 text-blue-600",
-    text: "text-blue-600",
     badgeBg: "bg-blue-50",
     badgeText: "text-blue-600",
     headerBg: "bg-blue-50",
@@ -587,7 +720,6 @@ const ROLE_STYLES = {
   },
   Bowler: {
     tabActive: "border-emerald-400 bg-emerald-50 text-emerald-600",
-    text: "text-emerald-600",
     badgeBg: "bg-emerald-50",
     badgeText: "text-emerald-600",
     headerBg: "bg-emerald-50",
@@ -595,7 +727,6 @@ const ROLE_STYLES = {
   },
   "All-Rounder": {
     tabActive: "border-violet-400 bg-violet-50 text-violet-600",
-    text: "text-violet-600",
     badgeBg: "bg-violet-50",
     badgeText: "text-violet-600",
     headerBg: "bg-violet-50",
@@ -603,262 +734,177 @@ const ROLE_STYLES = {
   },
 };
 
+const MIN_TEAM_SIZE = 11;
 const MAX_TEAM_SIZE = 20;
 
-
-const toCapitalize = (name = '') => {
-  // return name.charAt(0).toUpperCase() + name.slice(1)
-  if (name === "bowler") { return "Bowler" }
-  else if (name === "batter") { return "Batter" }
-  else return "All-Rounder"
-}
-
-/* ------------------------------------------------------------------ */
-/* Roster reducer — replaces selectedIds / captainId / viceCaptainId /  */
-/* openMenuFor useState hooks. These four values were almost always     */
-/* updated together, so a reducer keeps that in one place instead of   */
-/* four separate setters scattered across handlers.                    */
-/* ------------------------------------------------------------------ */
-
-const initialRosterState = {
-  selectedIds: [],
-  captainId: null,
-  viceCaptainId: null,
-  openMenuFor: null,
+const toCapitalize = (name = "") => {
+  const t = String(name).toLowerCase();
+  if (t === "bowler") return "Bowler";
+  if (t === "batter") return "Batter";
+  return "All-Rounder";
 };
 
-function rosterReducer(state, action) {
-  switch (action.type) {
-    case "ADD_PLAYER":
-      return { ...state, selectedIds: [...state.selectedIds, action.id] };
-    case "REMOVE_PLAYER":
-      return {
-        ...state,
-        selectedIds: state.selectedIds.filter((pid) => pid !== action.id),
-        captainId: state.captainId === action.id ? null : state.captainId,
-        viceCaptainId: state.viceCaptainId === action.id ? null : state.viceCaptainId,
-        openMenuFor: null,
-      };
-    case "MAKE_CAPTAIN":
-      return {
-        ...state,
-        captainId: action.id,
-        viceCaptainId: state.viceCaptainId === action.id ? null : state.viceCaptainId,
-        openMenuFor: null,
-      };
-    case "MAKE_VICE_CAPTAIN":
-      return {
-        ...state,
-        viceCaptainId: action.id,
-        captainId: state.captainId === action.id ? null : state.captainId,
-        openMenuFor: null,
-      };
-    case "CLEAR_ROLE":
-      return {
-        ...state,
-        captainId: state.captainId === action.id ? null : state.captainId,
-        viceCaptainId: state.viceCaptainId === action.id ? null : state.viceCaptainId,
-        openMenuFor: null,
-      };
-    case "SET_MENU":
-      return { ...state, openMenuFor: action.id };
-    // Loads an existing team's roster in one shot — used when opening the
-    // modal in edit mode, instead of dispatching ADD_PLAYER/MAKE_CAPTAIN etc.
-    // one at a time.
-    case "HYDRATE":
-      return {
-        ...state,
-        selectedIds: action.selectedIds || [],
-        captainId: action.captainId || null,
-        viceCaptainId: action.viceCaptainId || null,
-        openMenuFor: null,
-      };
-    case "CLEAR_TEAM":
-      return initialRosterState;
-    default:
-      return state;
-  }
-}
+const toPoolItem = (item) => {
+  const { _id, userId, battingStyle, bowlingStyle, playerType } = item;
+  const { name = "Default Name" } = userId || {};
+  return {
+    id: _id,
+    name,
+    type: playerType === "bowler" ? bowlingStyle : battingStyle,
+    role: toCapitalize(playerType),
+  };
+};
 
+const revoke = (url) => {
+  if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
+};
 
-export default function CreateTeam({
-  submitTeam,
-  players,
-  managers = [],
-  loading,
-  // Pass an existing team object to open the form in edit mode, pre-filled
-  // with that team's roster/captain/vice-captain/name/logo. Pass null (or
-  // omit) for create mode.
-  initialTeam = null,
-}) {
+export default function CreateTeam({ submitTeam, players, loading, initialTeam = null }) {
   const isEdit = !!initialTeam;
 
-  // Roster/selection state — was: selectedIds, captainId, viceCaptainId, openMenuFor
-  const [roster, dispatchRoster] = useReducer(rosterReducer, initialRosterState);
-  const { selectedIds, captainId, viceCaptainId, openMenuFor } = roster;
-  const { error, success } = useAppSelector(state => state.team);
-
-  // Available-players filter state — was: activeTab, search
+  // Everything below is initialised from initialTeam on mount. OrgTeams mounts this
+  // component fresh (with a key) every time the modal opens, so no effect is needed.
+  const [selectedIds, setSelectedIds] = useState(() =>
+    (initialTeam?.players || []).map((p) => (typeof p === "string" ? p : p._id))
+  );
   const [filters, setFilters] = useState({ activeTab: "Batter", search: "" });
   const { activeTab, search } = filters;
   const setActiveTab = (tab) => setFilters((f) => ({ ...f, activeTab: tab }));
   const setSearch = (value) => setFilters((f) => ({ ...f, search: value }));
 
-  // Team-detail fields — was: teamName, logoFile, logoPreview
-  const [teamDetails, setTeamDetails] = useState({
-    teamName: "",
+  const [teamDetails, setTeamDetails] = useState(() => ({
+    teamName: initialTeam?.name || "",
     logoFile: null,
-    logoPreview: null,
-  });
+    logoPreview: initialTeam?.logoUrl || null,
+  }));
   const { teamName, logoFile, logoPreview } = teamDetails;
   const setTeamName = (value) => setTeamDetails((d) => ({ ...d, teamName: value }));
 
-  const dispatch = useAppDispatch()
+  const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null);
+  const resetDrag = () => { setDragId(null); setOverId(null); };
 
-  // Edit-mode hydration: when an initialTeam is supplied (modal opened for
-  // editing), load its players/captain/vice-captain/name/logo into local
-  // state once. Re-runs if the user opens a different team's edit modal.
-  useEffect(() => {
-    if (!initialTeam) return;
-
-    const ids = (initialTeam.players || []).map((p) => p._id);
-    dispatchRoster({
-      type: "HYDRATE",
-      selectedIds: ids,
-      captainId: initialTeam.captain || null,
-      viceCaptainId: initialTeam.viceCaptain || null,
-    });
-
-    setTeamDetails({
-      teamName: initialTeam.name || "",
-      logoFile: null,
-      // logoUrl from the API is a string URL, not a File — show it directly
-      // as the preview; a new upload will replace it.
-      logoPreview: initialTeam.logoUrl || null,
-    });
-  }, [initialTeam]);
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files?.[0] || null;
-    setTeamDetails((d) => ({
-      ...d,
-      logoFile: file,
-      logoPreview: file ? URL.createObjectURL(file) : null,
-    }));
-  };
-
-  const handleLogoRemove = () => {
-    setTeamDetails((d) => {
-      if (d.logoPreview) URL.revokeObjectURL(d.logoPreview);
-      return { ...d, logoFile: null, logoPreview: null };
-    });
-  };
+  /* ----------------------------- player data ----------------------------- */
 
   const PLAYER_POOL = useMemo(() => {
-    return players
-      // .filter(ite => itm.status === "active" && itm.availability === "Available")
-      .map(item => {
-        const { _id, userId, battingStyle, bowlingStyle, playerType } = item;
-        // Batter Bowler All-Rounder
-        const { name = "Default Name", email, phone } = userId || {};
-        const type = playerType === "bowler" ? bowlingStyle : battingStyle
+    const map = new Map();
+    (players || []).forEach((p) => map.set(p._id, toPoolItem(p)));
+    // edit mode: the team's own players must always resolve, even if they are
+    // not in the loaded page of `players`
+    (initialTeam?.players || []).forEach((p) => {
+      if (p && typeof p === "object" && !map.has(p._id)) map.set(p._id, toPoolItem(p));
+    });
+    return [...map.values()];
+  }, [players, initialTeam]);
 
-        return { id: _id, name, type, role: toCapitalize(playerType) }
-      })
-  }, [players]);
+  const PLAYERS_BY_ID = useMemo(
+    () => Object.fromEntries(PLAYER_POOL.map((p) => [p.id, p])),
+    [PLAYER_POOL]
+  );
+
+  // A saved id that can't be resolved is shown (and can be removed) instead of vanishing
+  const getPlayer = (id) =>
+    PLAYERS_BY_ID[id] || { id, name: "Unknown player", type: "Not in loaded list", role: "All-Rounder" };
 
   const roleCounts = useMemo(() => {
     const counts = { Batter: 0, Bowler: 0, "All-Rounder": 0 };
     PLAYER_POOL.forEach((p) => counts[p.role]++);
     return counts;
-  }, []);
+  }, [PLAYER_POOL]);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const isFull = selectedIds.length >= MAX_TEAM_SIZE;
-  const isTeamComplete = selectedIds.length >= 11;
+  const isTeamComplete = selectedIds.length >= MIN_TEAM_SIZE;
 
-  const filteredAvailable = useMemo(() => {
-    return PLAYER_POOL.filter(
-      (p) => p.role === activeTab && p.name.toLowerCase().includes(search.trim().toLowerCase())
-    );
-  }, [activeTab, search]);
-
-
-  const PLAYERS_BY_ID = Object.fromEntries(PLAYER_POOL.map((p) => [p.id, p]));
+  const filteredAvailable = useMemo(
+    () =>
+      PLAYER_POOL.filter(
+        (p) => p.role === activeTab && p.name.toLowerCase().includes(search.trim().toLowerCase())
+      ),
+    [PLAYER_POOL, activeTab, search]
+  );
 
   const selectedByRole = useMemo(() => {
     const grouped = { Batter: [], Bowler: [], "All-Rounder": [] };
     selectedIds.forEach((id) => {
-      const player = PLAYERS_BY_ID[id];
-      if (player) grouped[player.role].push(player);
+      const player = PLAYERS_BY_ID[id] || {
+        id, name: "Unknown player", type: "Not in loaded list", role: "All-Rounder",
+      };
+      grouped[player.role].push(player);
     });
     return grouped;
-  }, [selectedIds]);
+  }, [selectedIds, PLAYERS_BY_ID]);
+
+  /* -------------------------------- actions ------------------------------- */
 
   const addPlayer = (id) => {
     if (isFull || selectedSet.has(id)) return;
-    dispatchRoster({ type: "ADD_PLAYER", id });
+    setSelectedIds((prev) => [...prev, id]);
   };
 
-  const removePlayer = (id) => {
-    dispatchRoster({ type: "REMOVE_PLAYER", id });
-  };
+  const removePlayer = (id) => setSelectedIds((prev) => prev.filter((x) => x !== id));
 
-  const makeCaptain = (id) => {
-    dispatchRoster({ type: "MAKE_CAPTAIN", id });
-  };
+  // Drag: players can only be dropped on another player of the same role
+  const canDropOn = (target) =>
+    !!dragId && dragId !== target.id && getPlayer(dragId).role === target.role;
 
-  const makeViceCaptain = (id) => {
-    dispatchRoster({ type: "MAKE_VICE_CAPTAIN", id });
-  };
-
-  const clearRole = (id) => {
-    dispatchRoster({ type: "CLEAR_ROLE", id });
-  };
-
-  const setOpenMenuFor = (id) => {
-    dispatchRoster({ type: "SET_MENU", id });
+  const movePlayer = (role, fromId, toId) => {
+    if (!fromId || fromId === toId) return;
+    setSelectedIds((prev) => {
+      const roleIds = prev.filter((id) => getPlayer(id).role === role);
+      const from = roleIds.indexOf(fromId);
+      const to = roleIds.indexOf(toId);
+      if (from < 0 || to < 0) return prev;
+      const [moved] = roleIds.splice(from, 1);
+      roleIds.splice(to, 0, moved);
+      let i = 0;
+      return prev.map((id) => (getPlayer(id).role === role ? roleIds[i++] : id));
+    });
   };
 
   const clearTeam = () => {
-    dispatchRoster({ type: "CLEAR_TEAM" });
-    setFilters(pre => ({ ...pre, activeTab: "Batter" }))
+    revoke(logoPreview);
+    setSelectedIds([]);
+    setFilters((f) => ({ ...f, activeTab: "Batter" }));
     setTeamDetails({ teamName: "", logoFile: null, logoPreview: null });
   };
 
-  const canConfirm = isTeamComplete && captainId && viceCaptainId && captainId !== viceCaptainId;
-
-  const handleConfirm = () => {
-    if (!canConfirm) return;
-
-    const payload = {
-      // Include the team id when editing so the parent knows which record
-      // to update instead of creating a new one.
-      ...(isEdit && { _id: initialTeam._id }),
-      name: teamName,
-      // Keep the existing logoUrl if the user didn't pick a new file while
-      // editing; otherwise send the newly picked File for upload.
-      logoUrl: logoFile || (isEdit ? initialTeam.logoUrl : null),
-      captain: captainId,
-      viceCaptain: viceCaptainId,
-      players: selectedIds,
-    }
-    submitTeam(payload, isEdit);
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    revoke(logoPreview);
+    setTeamDetails((d) => ({ ...d, logoFile: file, logoPreview: URL.createObjectURL(file) }));
+    e.target.value = "";
   };
 
-  useEffect(() => {
-    if (success) {
-      clearTeam();
-      clearRole();
-      removePlayer();
-      setTeamName('')
-    }
-  }, [success])
+  const handleLogoRemove = () => {
+    revoke(logoPreview);
+    // in edit mode fall back to the saved logo
+    setTeamDetails((d) => ({ ...d, logoFile: null, logoPreview: initialTeam?.logoUrl || null }));
+  };
+
+  const canConfirm = isTeamComplete && teamName.trim().length > 0;
+
+  const handleConfirm = () => {
+    if (!canConfirm || loading) return;
+    submitTeam(
+      {
+        ...(isEdit && { _id: initialTeam._id }),
+        name: teamName.trim(),
+        logoUrl: logoFile,          // a File only when a new logo was picked
+        players: selectedIds,
+      },
+      isEdit
+    );
+  };
+
+  /* --------------------------------- view --------------------------------- */
 
   return (
     <div className="min-h-screen min-w-[80vw] bg-slate-50">
       <div className="p-2 lg:p-2">
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          {/* Available players */}
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <h2 className="mb-4 text-lg font-bold text-slate-900">Available Players</h2>
 
@@ -877,8 +923,7 @@ export default function CreateTeam({
               </button>
             </div>
 
-            {/* Role tabs */}
-            <div className="mb-4 grid grid-cols-3 gap-2 ">
+            <div className="mb-4 grid grid-cols-3 gap-2">
               {ROLES.map((role) => {
                 const isActive = activeTab === role.key;
                 const styles = ROLE_STYLES[role.key];
@@ -886,8 +931,9 @@ export default function CreateTeam({
                   <button
                     key={role.key}
                     onClick={() => setActiveTab(role.key)}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${isActive ? styles.tabActive : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                      }`}
+                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${
+                      isActive ? styles.tabActive : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                    }`}
                   >
                     <role.icon size={14} />
                     {role.label} ({roleCounts[role.key]})
@@ -896,16 +942,13 @@ export default function CreateTeam({
               })}
             </div>
 
-            {/* Table header */}
             <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-slate-100 px-1 pb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
               <span>Player</span>
               <span className="hidden sm:block">Type</span>
               <span>Action</span>
             </div>
 
-            {/* <div className="max-h-[520px] divide-y divide-slate-50 overflow-y-auto"> */}
             <div className="max-h-[520px] space-y-5 overflow-y-auto pr-1 custom-scrollbar">
-
               {filteredAvailable.length === 0 && (
                 <p className="py-8 text-center text-sm text-slate-400">No players found.</p>
               )}
@@ -932,12 +975,13 @@ export default function CreateTeam({
                     <button
                       onClick={() => addPlayer(p.id)}
                       disabled={disabled}
-                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${alreadySelected
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-600"
-                        : disabled
-                          ? "cursor-not-allowed border-slate-200 text-slate-300"
-                          : "border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-                        }`}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        alreadySelected
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                          : disabled
+                            ? "cursor-not-allowed border-slate-200 text-slate-300"
+                            : "border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                      }`}
                     >
                       {alreadySelected ? <Check size={13} /> : <Plus size={13} />}
                       {alreadySelected ? "Added" : "Add"}
@@ -968,22 +1012,42 @@ export default function CreateTeam({
 
             <div className="max-h-[600px] space-y-5 overflow-y-auto pr-1 custom-scrollbar">
               {ROLES.map((role) => {
-                const players = selectedByRole[role.key];
-                if (!players.length) return null;
+                const list = selectedByRole[role.key];
+                if (!list.length) return null;
                 const styles = ROLE_STYLES[role.key];
                 return (
                   <div key={role.key}>
                     <div className={`mb-2 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide ${styles.headerBg} ${styles.headerText}`}>
-                      {role.label} ({players.length})
+                      {role.label} ({list.length})
                     </div>
                     <div className="divide-y divide-slate-50">
-                      {players.map((p) => {
+                      {list.map((p) => {
                         const order = selectedIds.indexOf(p.id) + 1;
-                        const isCaptain = captainId === p.id;
-                        const isViceCaptain = viceCaptainId === p.id;
                         return (
-                          <div key={p.id} className="flex items-center gap-3 py-2.5">
-                            <GripVertical size={14} className="shrink-0 cursor-grab text-slate-300" />
+                          <div
+                            key={p.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", p.id); // Firefox needs data to start a drag
+                              setDragId(p.id);
+                            }}
+                            onDragOver={(e) => {
+                              if (!canDropOn(p)) return;
+                              e.preventDefault();
+                              setOverId(p.id);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (canDropOn(p)) movePlayer(p.role, dragId, p.id);
+                              resetDrag();
+                            }}
+                            onDragEnd={resetDrag}
+                            className={`flex items-center gap-3 rounded-lg px-1 py-2.5 transition-colors ${
+                              dragId === p.id ? "opacity-40" : ""
+                            } ${overId === p.id && dragId !== p.id ? "bg-indigo-50" : ""}`}
+                          >
+                            <GripVertical size={14} className="shrink-0 cursor-grab text-slate-300 hover:text-slate-500 active:cursor-grabbing" />
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-xs font-semibold text-white">
                               {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
                             </div>
@@ -991,50 +1055,9 @@ export default function CreateTeam({
                               <p className="truncate text-sm font-semibold text-slate-800">{p.name}</p>
                               <p className="truncate text-xs text-slate-400">{p.type}</p>
                             </div>
-
-                            {/* Role badge / captain-vc menu */}
-                            <div className="relative">
-                              <button
-                                onClick={() => setOpenMenuFor(openMenuFor === p.id ? null : p.id)}
-                                className={`flex h-7 min-w-[28px] items-center justify-center rounded-md px-2 text-xs font-bold ${isCaptain
-                                  ? "bg-amber-400 text-white"
-                                  : isViceCaptain
-                                    ? "bg-rose-500 text-white"
-                                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                                  }`}
-                              >
-                                {isCaptain ? "C" : isViceCaptain ? "VC" : order}
-                              </button>
-
-                              {openMenuFor === p.id && (
-                                <>
-                                  <div className="fixed inset-0 z-10" onClick={() => setOpenMenuFor(null)} />
-                                  <div className="absolute right-0 top-9 z-20 w-40 overflow-hidden rounded-xl border border-slate-100 bg-white py-1 shadow-lg">
-                                    <button
-                                      onClick={() => makeCaptain(p.id)}
-                                      className="block w-full px-3 py-2 text-left text-xs font-medium text-slate-600 hover:bg-slate-50"
-                                    >
-                                      Make Captain
-                                    </button>
-                                    <button
-                                      onClick={() => makeViceCaptain(p.id)}
-                                      className="block w-full px-3 py-2 text-left text-xs font-medium text-slate-600 hover:bg-slate-50"
-                                    >
-                                      Make Vice Captain
-                                    </button>
-                                    {(isCaptain || isViceCaptain) && (
-                                      <button
-                                        onClick={() => clearRole(p.id)}
-                                        className="block w-full px-3 py-2 text-left text-xs font-medium text-slate-500 hover:bg-slate-50"
-                                      >
-                                        Clear Role
-                                      </button>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-
+                            <span className="flex h-7 min-w-[28px] items-center justify-center rounded-md bg-slate-100 px-2 text-xs font-bold text-slate-500">
+                              {order}
+                            </span>
                             <button
                               onClick={() => removePlayer(p.id)}
                               className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-50"
@@ -1056,27 +1079,16 @@ export default function CreateTeam({
                 </p>
               )}
             </div>
-
-
-            {!canConfirm && isTeamComplete && (
-              <p className="mt-2 text-center text-xs text-rose-500">
-                Assign both a Captain and a Vice Captain to continue.
-              </p>
-            )}
           </div>
         </div>
 
-        {/* -------------------------------------------------------------- */}
-        {/* Team Details — Home Venue & Tournament removed; logo can now    */}
-        {/* be cleared after being added.                                   */}
-        {/* -------------------------------------------------------------- */}
+        {/* Team details */}
         <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-bold text-slate-900">
             {isEdit ? "Edit Team Details" : "Team Details"}
           </h2>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Name */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Team Name
@@ -1090,7 +1102,6 @@ export default function CreateTeam({
               />
             </div>
 
-            {/* Logo Upload */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Logo
@@ -1100,7 +1111,7 @@ export default function CreateTeam({
                   <img
                     src={logoPreview}
                     alt="Team logo preview"
-                    className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200"
+                    className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
                   />
                 ) : (
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 text-slate-300">
@@ -1110,12 +1121,7 @@ export default function CreateTeam({
                 <label className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 shadow-sm hover:bg-slate-50">
                   <Upload size={14} />
                   <span className="truncate">{logoFile ? logoFile.name : "Upload image"}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoChange}
-                    className="hidden"
-                  />
+                  <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                 </label>
                 {logoFile && (
                   <button
@@ -1130,10 +1136,11 @@ export default function CreateTeam({
               </div>
             </div>
           </div>
+
           <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
             <button
               onClick={clearTeam}
-              disabled={selectedIds.length === 0}
+              disabled={selectedIds.length === 0 && !teamName && !logoFile}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Trash2 size={15} />
@@ -1141,7 +1148,7 @@ export default function CreateTeam({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!canConfirm}
+              disabled={!canConfirm || loading}
               className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check size={15} />
@@ -1150,9 +1157,16 @@ export default function CreateTeam({
                 : isEdit ? "Update Team" : "Confirm Team"}
             </button>
           </div>
+
+          {!canConfirm && (
+            <p className="mt-2 text-center text-xs text-slate-400">
+              {!isTeamComplete
+                ? `Select at least ${MIN_TEAM_SIZE} players (${MIN_TEAM_SIZE - selectedIds.length} more).`
+                : "Enter a team name."}
+            </p>
+          )}
         </div>
       </div>
-
     </div>
   );
 }

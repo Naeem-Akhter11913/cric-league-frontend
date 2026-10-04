@@ -11,3 +11,7 @@ export const updateTeamRequest = ({ id, payload }) => axiosInstance.patch(`/team
 export const addPlayerRequest = ({ id, payload }) => axiosInstance.post(`/teams/${id}/players`, payload).then((res) => res.data);
 
 export const listTeamPlayersRequest = id => axiosInstance.get(`/teams/${id}/players`).then((res) => res.data);
+export const deleteTeamPlayersRequest = id => axiosInstance.delete(`/teams/${id}/players`).then((res) => res.data);
+
+export const fetchTeamStatsRequest = () =>
+  axiosInstance.get('/teams/stats').then((res) => res.data);

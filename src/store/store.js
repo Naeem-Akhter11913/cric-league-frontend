@@ -5,6 +5,8 @@ import teamSlice from './Slice/teamSlice';
 import organizerSlice from './Slice/organizerSlice';
 import venueSlice from './Slice/venueSlice';
 import tournamentsSlice from './Slice/tournamentSlice';
+import playingXIReducer from './Slice/playingXISlice';
+import matchesReducer from './Slice/matchSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +15,8 @@ export const store = configureStore({
     team: teamSlice,
     organizer: organizerSlice,
     venue: venueSlice,
-    tournaments: tournamentsSlice
+    tournaments: tournamentsSlice,
+    playingXI: playingXIReducer,
+    match: matchesReducer
   },
 });

@@ -90,3 +90,26 @@ export const listTeamPlayers = createAsyncThunk(
     }
   }
 );
+
+
+export const deleteTeam = createAsyncThunk('team/delete', async (id, { rejectWithValue }) => {
+  try {
+    const res = await teamAPI.deleteTeamPlayersRequest(id);
+    return res;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to delete team');
+  }
+});
+
+// teamActions
+export const fetchTeamStats = createAsyncThunk(
+  'team/stats',
+  async (_, { rejectWithValue }) => {
+    try {
+      const body = await teamAPI.fetchTeamStatsRequest();
+      return body.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to load team stats');
+    }
+  }
+);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Eye, MoreVertical, Search, SlidersHorizontal } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Eye, MoreVertical, Pencil, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { getPlayerAvatar, getPlayerName, teamColors } from '../utils/teams.utils';
 
 const Crest = ({ name, size = 40 }) => {
@@ -38,6 +38,7 @@ const TeamsTables = ({
     setPage,
     perPage,
     onEdit,
+    onDelete
 }) => {
     const [openMenu, setOpenMenu] = useState(null);
 
@@ -153,40 +154,27 @@ const TeamsTables = ({
                                         </span>
                                     </td>
                                     <td className="px-5 py-3">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
-                                                <Eye size={15} />
-                                            </button>
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setOpenMenu(openMenu === i ? null : i)}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-                                                >
-                                                    <MoreVertical size={15} />
-                                                </button>
-                                                {openMenu === i && (
-                                                    <>
-                                                        {/* click-catcher so the menu closes on any outside click — must sit
-                                                        BELOW the menu itself, or it swallows clicks on the menu's own
-                                                        buttons (that was the earlier bug: Edit never fired because the
-                                                        catcher's z-index was higher than the menu's) */}
-                                                        <div className="fixed inset-0 z-30" onClick={() => setOpenMenu(null)} />
-                                                        <div className="absolute right-0 top-9 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-40 py-1">
-                                                            <button
-                                                                onClick={() => {
-                                                                    onEdit(row);
-                                                                    setOpenMenu(null);
-                                                                }}
-                                                                className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            <button className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">Message</button>
-                                                            <button className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-gray-50">Remove</button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
+
+                                        <div className="relative">
+                                            <td className="px-5 py-3">
+                                                <div className="flex items-center justify-end gap-1">
+
+                                                    <button
+                                                        title="Edit"
+                                                        onClick={() => onEdit(row)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-indigo-50 hover:text-[#4F46E5] transition-colors"
+                                                    >
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button
+                                                        title="Delete"
+                                                        onClick={() => onDelete(row)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </div>
                                     </td>
                                 </tr>
