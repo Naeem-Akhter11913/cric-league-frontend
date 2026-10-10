@@ -6,6 +6,7 @@ import { restoreSession } from './store/action/auth.action'
 
 import ProtectedRoute from './routes/ProtectedRoute'
 import GuestRoute from './routes/GuestRoute'
+import MatchScoring from './pages/MatchScoring'
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Navbar = lazy(() => import('./components/Navbar'));
@@ -70,6 +71,7 @@ function App() {
             <Route path="scorers" element={<OrgScorer />} />
             <Route path="notifications" element={<OrgNotifications />} />
             <Route path="settings" element={<OrgSettings />} />
+            <Route path="matches/:id/score" element={<MatchScoring />} />
           </Route>
         </Route>
 
