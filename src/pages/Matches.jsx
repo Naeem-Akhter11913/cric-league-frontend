@@ -531,6 +531,8 @@ const ScheduleForm = ({ options, initial, saving, onSubmit, onClose }) => {
         scorerId: idOf(initial?.scorerId),
         format: initial?.format || "T20",
         overs: initial ? initial.overs ?? "" : 20,
+        umpires: (initial?.umpires || []).join(", "),
+        tvUmpire: initial?.tvUmpire || "",
     }));
     const [error, setError] = useState("");
     const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -576,6 +578,8 @@ const ScheduleForm = ({ options, initial, saving, onSubmit, onClose }) => {
             format: f.format,
             overs: f.format === "Test" ? undefined : Number(f.overs),
             scheduledAt: new Date(f.scheduledAt).toISOString(),
+            umpires: f.umpires,
+            tvUmpire: f.tvUmpire
         });
     };
 
@@ -650,6 +654,15 @@ const ScheduleForm = ({ options, initial, saving, onSubmit, onClose }) => {
                         {options.scorers.map((s) => <option key={s._id} value={s._id}>{s.name} ({s.email})</option>)}
                     </select>
                 </div>
+            </div>
+
+            <div>
+                <Label>Umpires (optional, comma separated)</Label>
+                <input value={f.umpires} onChange={(e) => set("umpires", e.target.value)} placeholder="Kumar, Ramesh" className={inputCls} />
+            </div>
+            <div>
+                <Label>TV umpire (optional)</Label>
+                <input value={f.tvUmpire} onChange={(e) => set("tvUmpire", e.target.value)} placeholder="Siddharth" className={inputCls} />
             </div>
 
             {error && <p className="mt-3 text-sm text-rose-500">{error}</p>}

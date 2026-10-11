@@ -10,3 +10,5 @@ export const selectBatter = (id, playerId) => post(`/scoring/${id}/batter`, { pl
 export const selectBowler = (id, playerId) => post(`/scoring/${id}/bowler`, { playerId });
 export const recordBall = (id, body) => post(`/scoring/${id}/ball`, body);
 export const undoBall = (id) => axiosInstance.delete(`/scoring/${id}/ball/last`).then((r) => r.data);
+export const getLive = (id) => get(`/scoring/${id}/live`);
+export const getMyMatches = () => get('/scoring/my-matches');

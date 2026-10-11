@@ -8,6 +8,8 @@ import tournamentsSlice from './Slice/tournamentSlice';
 import playingXIReducer from './Slice/playingXISlice';
 import matchesReducer from './Slice/matchSlice';
 import scorerReducer from './Slice/scorerSlice';
+import pointTableSlice from './Slice/pointTableSlice';
+import statisticsReducer from "./Slice/statisticsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -19,6 +21,8 @@ export const store = configureStore({
     tournaments: tournamentsSlice,
     playingXI: playingXIReducer,
     match: matchesReducer,
-    scorer: scorerReducer
+    scorer: scorerReducer,
+    pointTable: pointTableSlice,
+    statistics: statisticsReducer,
   },
 });
